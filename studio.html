@@ -226,6 +226,7 @@
     .canvas-area {
       background: #05050c;
       overflow-y: auto;
+      scroll-behavior: smooth;
       padding: 24px 16px 80px;
       display: flex;
       flex-direction: column;
@@ -242,17 +243,40 @@
       width: 100%;
       display: block;
     }
+    .panel-reveal {
+      opacity: 0.15;
+      transform: translateY(14px);
+      transition: opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1), transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .panel-reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
     .gutter-box {
-      padding: 46px 24px;
+      position: relative;
+      padding: 64px 28px;
       text-align: center;
-      font-size: 17px;
+      font-size: 16.5px;
       font-weight: 700;
       font-style: italic;
-      color: #a5f3fc;
-      line-height: 1.6;
-      text-shadow: 0 0 12px rgba(6, 182, 212, 0.55);
-      background: #05050c;
+      color: #bae6fd;
+      line-height: 1.65;
+      text-shadow: 0 0 14px rgba(6, 182, 212, 0.65);
+      background: radial-gradient(ellipse at center, rgba(14, 116, 144, 0.22) 0%, #05050c 74%);
+      overflow: hidden;
     }
+    .gutter-box::before,
+    .gutter-box::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 2px;
+      height: 44px;
+      background: linear-gradient(to bottom, rgba(250, 204, 21, 0), rgba(103, 232, 249, 0.75), rgba(250, 204, 21, 0));
+    }
+    .gutter-box::before { top: 4px; }
+    .gutter-box::after { bottom: 4px; }
     .stage-banner {
       padding: 38px 20px 26px;
       text-align: center;
@@ -599,14 +623,35 @@
         `;
         ch.panels.forEach((p, idx) => {
           const imgUrl = currentViewMode === 'typeset' ? p.typeset_url : p.raw_url;
-          html += `<img src="${imgUrl}" alt="Chapter ${ch.chapter_index} Panel ${p.index}" />`;
-          if (p.gutter_text && idx < ch.panels.length - 1) {
-            html += `<div class="gutter-box">${p.gutter_text.replace(/\n/g, '<br/>')}</div>`;
+          html += `<img class="panel-reveal" src="${imgUrl}" alt="Chapter ${ch.chapter_index} Panel ${p.index}" />`;
+          if (idx < ch.panels.length - 1) {
+            if (currentViewMode === 'typeset' && p.bridge_url) {
+              html += `<img class="seamless-bridge-img" src="${p.bridge_url}" alt="Seamless Transition Bridge" />`;
+            } else if (p.gutter_text) {
+              html += `<div class="gutter-box">${p.gutter_text.replace(/\n/g, '<br/>')}</div>`;
+            }
           }
         });
       });
 
       stage.innerHTML = html;
+      initScrollReveal();
+    }
+
+    function initScrollReveal() {
+      const items = document.querySelectorAll('.panel-reveal');
+      if (!('IntersectionObserver' in window)) {
+        items.forEach(el => el.classList.add('visible'));
+        return;
+      }
+      const obs = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      }, { threshold: 0.08 });
+      items.forEach(el => obs.observe(el));
     }
 
     function renderEditor() {
@@ -624,10 +669,12 @@
 
       const chapters = sb.chapters || [{ chapter_index: 1, chapter_title: sb.subtitle || 'CHƯƠNG 1', panels: sb.panels || [] }];
       chapters.forEach((ch, cIdx) => {
+        const panelTotal = (ch.panels || []).length;
         (ch.panels || []).forEach((p, pIdx) => {
           const narText = (p.narrations && p.narrations[0]) ? p.narrations[0].text : '';
           const bubText = (p.bubbles && p.bubbles[0]) ? p.bubbles[0].text : '';
           const sfxText = (p.sfx && p.sfx[0]) ? p.sfx[0].text : '';
+          const gutText = p.gutter_text || '';
           html += `
             <div class="panel-editor-block">
               <h5>Hồi ${cIdx + 1} - Khung #${pIdx + 1}: ${p.scene_title || ''}</h5>
@@ -637,6 +684,10 @@
               <textarea rows="2" id="ed_bub_${cIdx}_${pIdx}">${bubText}</textarea>
               <label>Chữ tượng thanh (SFX)</label>
               <input type="text" id="ed_sfx_${cIdx}_${pIdx}" value="${sfxText.replace(/"/g, '&quot;')}" />
+              ${pIdx < panelTotal - 1 ? `
+                <label style="color:var(--accent-cyan);">🌉 Lời dẫn chuyển cảnh sang Khung #${pIdx + 2} (Seamless Bridge)</label>
+                <textarea rows="2" id="ed_gut_${cIdx}_${pIdx}">${gutText}</textarea>
+              ` : ''}
             </div>
           `;
         });
@@ -656,6 +707,7 @@
           const narEl = document.getElementById(`ed_nar_${cIdx}_${pIdx}`);
           const bubEl = document.getElementById(`ed_bub_${cIdx}_${pIdx}`);
           const sfxEl = document.getElementById(`ed_sfx_${cIdx}_${pIdx}`);
+          const gutEl = document.getElementById(`ed_gut_${cIdx}_${pIdx}`);
           if (!narEl) return;
 
           const narVal = narEl.value.trim();
@@ -669,6 +721,10 @@
           const sfxVal = sfxEl.value.trim();
           if (p.sfx && p.sfx.length > 0) p.sfx[0].text = sfxVal;
           else if (sfxVal) p.sfx = [{ text: sfxVal, x: 420, y: 500, font_size: 52 }];
+
+          if (gutEl) {
+            p.gutter_text = gutEl.value.trim();
+          }
         });
       });
 

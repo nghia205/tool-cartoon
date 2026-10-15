@@ -86,10 +86,13 @@ def get_project_details(project_id: str) -> dict:
             if multi_chapter_mode:
                 raw_name = f"ch{ch_idx}_panel_{p_idx}_raw.jpg"
                 typeset_name = f"ch{ch_idx}_panel_{p_idx}_typeset.jpg"
+                bridge_name = f"ch{ch_idx}_bridge_{p_idx}.jpg"
             else:
                 raw_name = f"panel_{p_idx}_raw.jpg"
                 typeset_name = f"panel_{p_idx}_typeset.jpg"
+                bridge_name = f"bridge_{p_idx}.jpg"
 
+            bridge_exists = os.path.exists(os.path.join(proj_dir, bridge_name))
             panels_list.append(
                 {
                     "index": p_idx,
@@ -97,6 +100,7 @@ def get_project_details(project_id: str) -> dict:
                     "gutter_text": p_cfg.get("gutter_text", ""),
                     "raw_url": f"/projects/{project_id}/{raw_name}?t={ts}",
                     "typeset_url": f"/projects/{project_id}/{typeset_name}?t={ts}",
+                    "bridge_url": f"/projects/{project_id}/{bridge_name}?t={ts}" if bridge_exists else "",
                 }
             )
         chapters_info.append(
