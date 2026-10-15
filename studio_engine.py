@@ -889,13 +889,13 @@ def generate_storyboard_via_ai(
     # - gemma-4-31b-it (30 RPM, 16K TPM, 14.4K RPD)
     if provider.startswith("gemini") and api_key:
         default_chain = [
-            "gemini-3.5-flash-lite",
-            "gemini-3.8-flash",
             "gemini-3.1-flash-lite",
+            "gemini-3.5-flash-lite",
             "gemini-3-flash-preview",
+            "gemini-3.8-flash",
             "gemma-4-31b-it",
         ]
-        preferred = provider.split(":", 1)[1] if ":" in provider else "gemini-3.5-flash-lite"
+        preferred = provider.split(":", 1)[1] if ":" in provider else "gemini-3.1-flash-lite"
         model_chain = [preferred] + [m for m in default_chain if m != preferred]
 
         last_err = None
@@ -905,15 +905,19 @@ def generate_storyboard_via_ai(
                 if model_name.startswith("gemma-"):
                     payload = {
                         "contents": [{"parts": [{"text": FULL_SERIES_SYSTEM_PROMPT + "\n\n" + user_msg}]}],
-                        "generationConfig": {"temperature": 0.7},
+                        "generationConfig": {"temperature": 0.7, "maxOutputTokens": 16384},
                     }
                 else:
                     payload = {
                         "systemInstruction": {"parts": [{"text": FULL_SERIES_SYSTEM_PROMPT}]},
                         "contents": [{"parts": [{"text": user_msg}]}],
-                        "generationConfig": {"responseMimeType": "application/json", "temperature": 0.7},
+                        "generationConfig": {
+                            "responseMimeType": "application/json",
+                            "temperature": 0.7,
+                            "maxOutputTokens": 16384,
+                        },
                     }
-                resp = requests.post(url, json=payload, timeout=90)
+                resp = requests.post(url, json=payload, timeout=60)
                 if resp.status_code == 200:
                     parts = resp.json()["candidates"][0]["content"]["parts"]
                     raw_text = "".join(p.get("text", "") for p in parts if "text" in p).strip()
