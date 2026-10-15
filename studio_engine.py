@@ -79,30 +79,178 @@ def wrap_vietnamese_text(text: str, max_chars_per_line: int = 32) -> str:
     return "\n".join(lines)
 
 
-def apply_vertical_fade(img: Image.Image, fade_top=145, fade_bottom=165) -> Image.Image:
+def apply_vertical_fade(
+    img: Image.Image,
+    fade_top: int = 45,
+    fade_bottom: int = 50,
+) -> Image.Image:
     """
-    Làm mờ mượt mà 2 đầu khung hình theo đường cong Cosine S-Curve (không gắt cạnh),
-    kèm hiệu ứng dải sáng dẫn mắt dọc ở tâm giúp nối cảnh tự nhiên như Webtoon Hàn Quốc.
+    Làm mờ thật nhẹ (nhạt) theo tông màu của ảnh ở mép đầu chương / cuối chương.
     """
     w, h = img.size
-    result = img.convert("RGBA")
-    overlay = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(overlay)
+    rgb = img.convert("RGB")
+    color_mist = rgb.filter(ImageFilter.GaussianBlur(6))
+    mask = Image.new("L", (1, h), 0)
 
-    for y in range(min(fade_top, h // 3)):
-        t = 1.0 - (y / float(fade_top))
-        # Đường cong S-curve cosine mượt mà từ 1.0 -> 0.0
-        smooth = 0.5 * (1.0 - math.cos(math.pi * t))
-        alpha = int(255 * (smooth ** 1.15))
-        draw.line([(0, y), (w, y)], fill=(5, 5, 12, alpha))
+    if fade_top > 0:
+        ft = min(fade_top, h // 5)
+        for y in range(ft):
+            t = 1.0 - (y / float(ft))
+            smooth = (0.5 * (1.0 - math.cos(math.pi * t))) ** 2.0
+            mask.putpixel((0, y), int(95 * smooth))
 
-    for y in range(max(0, h - fade_bottom), h):
-        t = (y - (h - fade_bottom)) / float(fade_bottom)
-        smooth = 0.5 * (1.0 - math.cos(math.pi * t))
-        alpha = int(255 * (smooth ** 1.15))
-        draw.line([(0, y), (w, y)], fill=(5, 5, 12, alpha))
+    if fade_bottom > 0:
+        fb = min(fade_bottom, h // 5)
+        for y in range(max(0, h - fb), h):
+            t = (y - (h - fb)) / float(fb)
+            smooth = (0.5 * (1.0 - math.cos(math.pi * t))) ** 2.0
+            mask.putpixel((0, y), max(mask.getpixel((0, y)), int(95 * smooth)))
 
-    return Image.alpha_composite(result, overlay)
+    mask = mask.resize((w, h), Image.NEAREST)
+    return Image.composite(color_mist, rgb, mask).convert("RGBA")
+
+
+def compute_gutter_layout(gutter_text: str, W: int = 800) -> tuple:
+    """
+    Tính toán chính xác văn bản đã ngắt dòng, font chữ, chiều cao vùng nối `ext_h`
+    để đảm bảo chữ chuyển cảnh KHÔNG BAO GIỜ bị cắt ở mép trên, mép dưới hay hai bên.
+    """
+    clean_gutter = " ".join(gutter_text.split()) if gutter_text else ""
+    if not clean_gutter or clean_gutter == "...":
+        return "", None, 0, 0
+
+    gfont = get_font(FONT_BOLD_ITALIC, 19)
+    gtxt = wrap_vietnamese_text(clean_gutter, 54)
+    dummy_draw = ImageDraw.Draw(Image.new("RGBA", (16, 16)))
+    bbox = dummy_draw.multiline_textbbox((0, 0), gtxt, font=gfont, align="center")
+    tw = bbox[2] - bbox[0]
+    th = bbox[3] - bbox[1]
+
+    # Nếu bề ngang câu chữ quá sát mép (W - 64), tự động ngắt dòng gọn hơn
+    if tw > W - 64:
+        gtxt = wrap_vietnamese_text(clean_gutter, 46)
+        bbox = dummy_draw.multiline_textbbox((0, 0), gtxt, font=gfont, align="center")
+        tw = bbox[2] - bbox[0]
+        th = bbox[3] - bbox[1]
+
+    # Đệm trên 28px + chiều cao thật của chữ + đệm dưới 30px (kể cả viền outline 8px & glow 6px)
+    ext_h = max(108, int(th) + 58)
+    return gtxt, gfont, int(th), ext_h
+
+
+def blend_two_panels_seamlessly(
+    panel_above: Image.Image,
+    panel_below: Image.Image,
+    gutter_text: str = "",
+    fade_h: int = 55,
+) -> tuple:
+    """
+    Chuyển cảnh mờ nhạt, tinh tế giữa đáy ảnh trên và đỉnh ảnh dưới:
+    - Vùng chuyển cảnh tự động tính đủ độ cao `ext_h` theo bounding-box thật của chữ để không bao giờ cắt chữ.
+    - Mở rộng đối xứng tỉ lệ 1:1 (không kéo giãn dọc) kết hợp bán kính làm mờ rất nhạt (`GaussianBlur` 2-3px)
+      và 12% sắc độ đồng bộ giúp 2 ảnh hòa quyện tự nhiên, thanh thoát.
+    """
+    w = panel_above.size[0]
+    h1 = panel_above.size[1]
+    h2 = panel_below.size[1]
+    fh = min(fade_h, h1 // 5, h2 // 5)
+    if fh < 20:
+        return panel_above, panel_below
+
+    _, _, _, ext_h = compute_gutter_layout(gutter_text, W=w)
+
+    top_zone_h = fh + ext_h
+    bot_zone_h = fh
+    total_h = top_zone_h + bot_zone_h
+
+    crop_a = panel_above.crop((0, h1 - fh, w, h1)).convert("RGB")
+    crop_b = panel_below.crop((0, 0, w, fh)).convert("RGB")
+
+    # Mở rộng tỉ lệ 1:1 từ mép ảnh trên xuống (không kéo giãn gây nhòe dọc)
+    ext_a = Image.new("RGB", (w, total_h))
+    ext_a.paste(crop_a, (0, 0))
+    if total_h > fh:
+        rem_a = total_h - fh
+        src_a_h = min(h1, rem_a)
+        mirror_a = panel_above.crop((0, h1 - src_a_h, w, h1)).convert("RGB").transpose(Image.FLIP_TOP_BOTTOM)
+        if src_a_h < rem_a:
+            mirror_a = mirror_a.resize((w, rem_a), Image.BILINEAR)
+        ext_a.paste(mirror_a, (0, fh))
+
+    ext_b = Image.new("RGB", (w, total_h))
+    src_b_h = min(h2, top_zone_h)
+    mirror_b = panel_below.crop((0, 0, w, src_b_h)).convert("RGB").transpose(Image.FLIP_TOP_BOTTOM)
+    if src_b_h < top_zone_h:
+        mirror_b = mirror_b.resize((w, top_zone_h), Image.BILINEAR)
+    ext_b.paste(mirror_b, (0, 0))
+    ext_b.paste(crop_b, (0, top_zone_h))
+
+    # Màn màu đồng bộ phớt thật nhạt (chỉ pha 12% sắc độ chung để 2 ảnh bắt màu nhau tự nhiên)
+    edge_band = max(14, fh // 2)
+    curtain_a = (
+        panel_above.crop((0, h1 - edge_band, w, h1))
+        .convert("RGB")
+        .resize((w, total_h), Image.BILINEAR)
+        .filter(ImageFilter.GaussianBlur(10))
+    )
+    curtain_b = (
+        panel_below.crop((0, 0, w, edge_band))
+        .convert("RGB")
+        .resize((w, total_h), Image.BILINEAR)
+        .filter(ImageFilter.GaussianBlur(10))
+    )
+
+    # Làm mờ nhạt (light soft-focus 3px) giữ chi tiết thanh thoát
+    soft_a = ext_a.filter(ImageFilter.GaussianBlur(3))
+    soft_b = ext_b.filter(ImageFilter.GaussianBlur(3))
+
+    stream_a = Image.blend(soft_a, curtain_a, 0.12)
+    stream_b = Image.blend(soft_b, curtain_b, 0.12)
+
+    mask_cross = Image.new("L", (1, total_h))
+    for y in range(total_h):
+        s = y / float(max(1, total_h - 1))
+        smooth_s = 0.5 * (1.0 - math.cos(math.pi * s))
+        mask_cross.putpixel((0, y), int(255 * smooth_s))
+    mask_cross = mask_cross.resize((w, total_h), Image.NEAREST)
+
+    synced_color_stream = Image.composite(stream_b, stream_a, mask_cross).filter(ImageFilter.GaussianBlur(2))
+
+    # Mặt nạ phớt nhẹ (bậc 2.2 để vùng trong ảnh hoàn toàn rõ nét, chỉ mờ nhạt sát điểm nối)
+    mask_fade_top = Image.new("L", (1, top_zone_h))
+    for y in range(top_zone_h):
+        if y < fh:
+            u = y / float(max(1, fh - 1))
+            smooth_u = (0.5 * (1.0 - math.cos(math.pi * u))) ** 2.2
+            mask_fade_top.putpixel((0, y), int(255 * smooth_u))
+        else:
+            mask_fade_top.putpixel((0, y), 255)
+    mask_fade_top = mask_fade_top.resize((w, top_zone_h), Image.NEAREST)
+
+    mask_fade_bot = Image.new("L", (1, bot_zone_h))
+    for y in range(bot_zone_h):
+        v = y / float(max(1, bot_zone_h - 1))
+        inv_v = 1.0 - v
+        smooth_v = (0.5 * (1.0 - math.cos(math.pi * inv_v))) ** 2.2
+        mask_fade_bot.putpixel((0, y), int(255 * smooth_v))
+    mask_fade_bot = mask_fade_bot.resize((w, bot_zone_h), Image.NEAREST)
+
+    top_base = ext_a.crop((0, 0, w, top_zone_h))
+    top_stream = synced_color_stream.crop((0, 0, w, top_zone_h))
+    blended_top_part = Image.composite(top_stream, top_base, mask_fade_top).convert("RGBA")
+
+    bot_base = crop_b
+    bot_stream = synced_color_stream.crop((0, top_zone_h, w, total_h))
+    blended_bot_part = Image.composite(bot_stream, bot_base, mask_fade_bot).convert("RGBA")
+
+    out_above = Image.new("RGBA", (w, h1 + ext_h))
+    out_above.paste(panel_above.crop((0, 0, w, h1 - fh)), (0, 0))
+    out_above.paste(blended_top_part, (0, h1 - fh))
+
+    out_below = panel_below.copy()
+    out_below.paste(blended_bot_part, (0, 0))
+
+    return out_above, out_below
 
 
 def draw_text_with_outline(
@@ -322,7 +470,7 @@ def render_character_sheet_card(raw_path: str, out_path: str, name: str, role: s
     img.convert("RGB").save(out_path, quality=95)
 
 
-def render_single_panel(raw_path: str, out_path: str, p_cfg: dict, W: int = 800) -> Image.Image:
+def load_and_prepare_raw_panel(raw_path: str, W: int = 800) -> Image.Image:
     if not os.path.exists(raw_path):
         placeholder = Image.new("RGB", (W, 1200), (18, 18, 34))
         placeholder.save(raw_path, quality=92)
@@ -330,8 +478,26 @@ def render_single_panel(raw_path: str, out_path: str, p_cfg: dict, W: int = 800)
     img = Image.open(raw_path).convert("RGBA")
     pw, ph = img.size
     new_h = int(ph * (W / pw))
-    img = img.resize((W, new_h), Image.LANCZOS)
-    img = apply_vertical_fade(img, fade_top=110, fade_bottom=130)
+    return img.resize((W, new_h), Image.LANCZOS)
+
+
+def typeset_prepared_panel(
+    img: Image.Image,
+    out_path: str,
+    p_cfg: dict,
+    orig_h: int = None,
+    has_top_transition: bool = False,
+    has_bottom_transition: bool = False,
+) -> Image.Image:
+    """
+    Đóng hộp dẫn truyện, SFX, bóng thoại và chữ dẫn chuyển cảnh (`gutter_text`)
+    lên khung hình đã được xử lý hòa quyện màu nối cảnh.
+    """
+    img = img.copy()
+    W = img.size[0]
+    base_h = orig_h if orig_h is not None else img.size[1]
+    top_safe_y = 115 if has_top_transition else 100
+    bottom_safe_y = base_h - 115 if has_bottom_transition else base_h - 105
 
     for nar in p_cfg.get("narrations", []):
         txt = wrap_vietnamese_text(nar.get("text", ""), nar.get("wrap", 38))
@@ -339,7 +505,11 @@ def render_single_panel(raw_path: str, out_path: str, p_cfg: dict, W: int = 800)
             continue
         cx = int(nar.get("x", 400))
         cy_raw = nar.get("y", 110)
-        cy = int(new_h + cy_raw) if cy_raw < 0 else int(cy_raw)
+        cy = int(base_h + cy_raw) if cy_raw < 0 else int(cy_raw)
+        if cy < base_h // 2:
+            cy = max(cy, top_safe_y)
+        else:
+            cy = min(cy, bottom_safe_y)
         bw = int(nar.get("w", 660))
         bh = int(nar.get("h", 105))
         bcol = tuple(nar.get("border_color", [250, 204, 21, 235]))
@@ -362,7 +532,7 @@ def render_single_panel(raw_path: str, out_path: str, p_cfg: dict, W: int = 800)
             continue
         sx = int(sfx.get("x", 400))
         sy_raw = sfx.get("y", 450)
-        sy = int(new_h + sy_raw) if sy_raw < 0 else int(sy_raw)
+        sy = int(base_h + sy_raw) if sy_raw < 0 else int(sy_raw)
         img = draw_sfx(
             img,
             pos=(sx, sy),
@@ -379,13 +549,17 @@ def render_single_panel(raw_path: str, out_path: str, p_cfg: dict, W: int = 800)
             continue
         bx = int(bub.get("x", 240))
         by_raw = bub.get("y", 140)
-        by = int(new_h + by_raw) if by_raw < 0 else int(by_raw)
+        by = int(base_h + by_raw) if by_raw < 0 else int(by_raw)
+        if by < base_h // 2:
+            by = max(by, top_safe_y)
+        else:
+            by = min(by, bottom_safe_y)
         rx = int(bub.get("rx", 210))
         ry = int(bub.get("ry", 74))
         tail = bub.get("tail")
         if tail and len(tail) == 2:
             tx = int(tail[0])
-            ty = int(new_h + tail[1]) if tail[1] < 0 else int(tail[1])
+            ty = int(base_h + tail[1]) if tail[1] < 0 else int(tail[1])
             tail = (tx, ty)
         else:
             tail = None
@@ -401,119 +575,46 @@ def render_single_panel(raw_path: str, out_path: str, p_cfg: dict, W: int = 800)
             font_size=int(bub.get("font_size", 23)),
         )
 
+    # Nếu có lời dẫn chuyển cảnh (gutter_text), vẽ trực tiếp lên vùng màu hòa quyện giữa 2 ảnh (không đóng khung UI riêng)
+    if has_bottom_transition and img.size[1] > base_h:
+        gtxt, gfont, th, _ = compute_gutter_layout(p_cfg.get("gutter_text", ""), W=W)
+        if gtxt and gfont is not None:
+            ext_h = img.size[1] - base_h
+            half_txt_h = (th // 2) + 18
+            cy_gutter = max(base_h + half_txt_h, min(base_h + (ext_h // 2), img.size[1] - half_txt_h))
+            # Tạo lớp glow mềm nhẹ dưới chữ để chữ luôn nổi bật trên mọi dải màu ảnh
+            txt_layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+            tdraw = ImageDraw.Draw(txt_layer)
+            draw_text_with_outline(
+                tdraw,
+                (W // 2, cy_gutter),
+                gtxt,
+                gfont,
+                fill=(12, 14, 28, 220),
+                outline_color=(12, 14, 28, 220),
+                outline_width=8,
+            )
+            txt_glow = txt_layer.filter(ImageFilter.GaussianBlur(6))
+            tdraw_crisp = ImageDraw.Draw(txt_glow)
+            draw_text_with_outline(
+                tdraw_crisp,
+                (W // 2, cy_gutter),
+                gtxt,
+                gfont,
+                fill=(254, 249, 195, 255),
+                outline_color=(10, 12, 24, 255),
+                outline_width=4,
+            )
+            img = Image.alpha_composite(img, txt_glow)
+
     img.convert("RGB").save(out_path, quality=95)
     return img
 
 
-def create_seamless_transition_bridge(
-    panel_above: Image.Image,
-    panel_below: Image.Image,
-    gutter_text: str,
-    W: int = 800,
-    bridge_h: int = 230,
-    style_idx: int = 0,
-) -> Image.Image:
-    """
-    Tạo cầu nối chuyển cảnh mượt mà (Seamless Atmospheric Transition Bridge) giữa 2 khung hình:
-    1. Trích xuất bảng màu (Ambient Color Bleed) từ đáy khung trên và đỉnh khung dưới,
-       hòa trộn (cross-fade) qua Gaussian Blur và đường cong hình chuông (sin bell-curve)
-       để khớp 100% điểm ảnh ở 2 mép nối (không còn vết cắt ngang đột ngột).
-    2. Vẽ dải lụa ánh sáng dẫn mắt dọc (Vertical Scroll-Lead Light Stream) + hạt linh khí (Bokeh)
-       dẫn thị giác người đọc trôi tự nhiên từ khung trên xuống khung dưới.
-    3. Đặt lời dẫn chuyển cảnh (gutter_text) trên lớp sương mờ điện ảnh.
-    """
-    h1 = panel_above.size[1]
-    h2 = panel_below.size[1]
-
-    # Lấy vùng màu gần đáy khung trên (trước vùng tối hẳn) và vùng màu gần đỉnh khung dưới
-    y1_a = max(0, h1 - 280)
-    y1_b = max(y1_a + 20, h1 - 130)
-    crop_above = panel_above.crop((0, y1_a, W, min(h1, y1_b))).convert("RGB").resize((W, bridge_h), Image.BILINEAR)
-
-    y2_a = min(h2 - 20, 130)
-    y2_b = min(h2, 280)
-    if y2_b <= y2_a:
-        y2_a, y2_b = 0, min(h2, 100)
-    crop_below = panel_below.crop((0, y2_a, W, y2_b)).convert("RGB").resize((W, bridge_h), Image.BILINEAR)
-
-    # Cross-fade dọc liên tục giữa bảng màu đáy khung trên và bảng màu đỉnh khung dưới
-    grad_mask = Image.new("L", (1, bridge_h))
-    for y in range(bridge_h):
-        t = y / float(max(1, bridge_h - 1))
-        smooth_t = 0.5 * (1.0 - math.cos(math.pi * t))
-        grad_mask.putpixel((0, y), int(255 * smooth_t))
-    grad_mask = grad_mask.resize((W, bridge_h), Image.NEAREST)
-    blended_ambient = Image.composite(crop_below, crop_above, grad_mask).filter(ImageFilter.GaussianBlur(48))
-
-    # Hòa trộn với nền (5, 5, 12) theo đường cong C1-continuous sin^2(pi * t):
-    # Tại t=0 và t=1, cả giá trị lẫn đạo hàm đều bằng 0 -> triệt tiêu 100% vệt gãy thị giác ở mép!
-    base_bg = Image.new("RGB", (W, bridge_h), (5, 5, 12))
-    bell_mask = Image.new("L", (1, bridge_h))
-    for y in range(bridge_h):
-        t = y / float(max(1, bridge_h - 1))
-        bell = (math.sin(math.pi * t) ** 2.0) * 0.44
-        bell_mask.putpixel((0, y), int(255 * bell))
-    bell_mask = bell_mask.resize((W, bridge_h), Image.NEAREST)
-    bridge = Image.composite(blended_ambient, base_bg, bell_mask).convert("RGBA")
-
-    # Lớp hiệu ứng Dải Sáng Dẫn Mắt Dọc (Scroll-Lead Light Trail) & Hạt Linh Khí (Bokeh)
-    fx_layer = Image.new("RGBA", (W, bridge_h), (0, 0, 0, 0))
-    fdraw = ImageDraw.Draw(fx_layer)
-
-    is_gold = (style_idx % 2 == 1)
-    primary_col = (253, 224, 71) if is_gold else (103, 232, 249)
-    secondary_col = (245, 158, 11) if is_gold else (147, 51, 234)
-
-    # Dải tia sáng dọc ở trục giữa dẫn mắt từ khung trên xuống khung dưới (mờ dần C1 ở 2 đầu)
-    cx = W // 2
-    for y in range(bridge_h):
-        t = y / float(max(1, bridge_h - 1))
-        text_gap = abs(t - 0.5) * 2.0
-        edge_fade = math.sin(math.pi * t) ** 1.6
-        alpha_beam = int(175 * edge_fade * (0.20 + 0.80 * (text_gap ** 1.5)))
-        fdraw.line([(cx - 1, y), (cx + 1, y)], fill=(*primary_col, alpha_beam))
-
-    # Các hạt linh khí (Bokeh orbs) trôi dọc theo cầu nối
-    for p_i in range(18):
-        px = int((W * 0.10) + ((p_i * 137 + style_idx * 53) % int(W * 0.80)))
-        py = int(24 + ((p_i * 79 + style_idx * 29) % (bridge_h - 48)))
-        pr = 2 + (p_i % 5)
-        p_col = primary_col if (p_i % 2 == 0) else secondary_col
-        t_py = py / float(max(1, bridge_h - 1))
-        p_alpha = int((55 + (p_i % 4) * 32) * (math.sin(math.pi * t_py) ** 1.2))
-        fdraw.ellipse([px - pr, py - pr, px + pr, py + pr], fill=(*p_col, p_alpha))
-
-    fx_blurred = fx_layer.filter(ImageFilter.GaussianBlur(3))
-    bridge = Image.alpha_composite(bridge, fx_blurred)
-    bridge = Image.alpha_composite(bridge, fx_layer)
-
-    # Vẽ lời dẫn chuyển cảnh (Gutter Text) cân đối dòng (không ngắt dòng lẻ chữ)
-    clean_gutter = " ".join(gutter_text.split()) if gutter_text else ""
-    gtxt = wrap_vietnamese_text(clean_gutter, 48) if clean_gutter else ""
-    if gtxt and gtxt != "...":
-        txt_backdrop = Image.new("RGBA", (W, bridge_h), (0, 0, 0, 0))
-        tb_draw = ImageDraw.Draw(txt_backdrop)
-        tb_draw.ellipse([W // 2 - 340, bridge_h // 2 - 56, W // 2 + 340, bridge_h // 2 + 56], fill=(5, 5, 14, 175))
-        txt_backdrop = txt_backdrop.filter(ImageFilter.GaussianBlur(20))
-        bridge = Image.alpha_composite(bridge, txt_backdrop)
-
-        bdraw = ImageDraw.Draw(bridge)
-        cy = bridge_h // 2
-        orn_col = (*primary_col, 215)
-        bdraw.polygon([(cx, cy - 58), (cx + 6, cy - 52), (cx, cy - 46), (cx - 6, cy - 52)], fill=orn_col)
-        bdraw.polygon([(cx, cy + 46), (cx + 6, cy + 52), (cx, cy + 58), (cx - 6, cy + 52)], fill=orn_col)
-
-        draw_text_with_outline(
-            bdraw,
-            (W // 2, cy),
-            gtxt,
-            get_font(FONT_BOLD_ITALIC, 21),
-            fill=(254, 240, 138, 255) if is_gold else (186, 230, 253, 255),
-            outline_color=(4, 4, 12, 255),
-            outline_width=3,
-        )
-
-    return bridge
+def render_single_panel(raw_path: str, out_path: str, p_cfg: dict, W: int = 800) -> Image.Image:
+    img = load_and_prepare_raw_panel(raw_path, W=W)
+    img = apply_vertical_fade(img, fade_top=45, fade_bottom=50)
+    return typeset_prepared_panel(img, out_path, p_cfg, has_top_transition=False, has_bottom_transition=False)
 
 
 def stitch_chapter_strip(
@@ -527,17 +628,14 @@ def stitch_chapter_strip(
     W: int = 800,
     bridges_out_paths: list = None,
 ) -> Image.Image:
+    """
+    Ghép trực tiếp các khung hình đã làm mờ nối tiếp (không chèn UI chuyển cảnh riêng ở giữa),
+    tạo mạch đọc liền mạch tuyệt đối từ trên xuống dưới.
+    """
     header_h = 260
-    gutter_h = 240
     footer_h = 220
 
-    n_panels = len(typeset_panels)
-    total_h = (
-        header_h
-        + sum(p.size[1] for p in typeset_panels)
-        + gutter_h * max(0, n_panels - 1)
-        + footer_h
-    )
+    total_h = header_h + sum(p.size[1] for p in typeset_panels) + footer_h
     strip = Image.new("RGBA", (W, total_h), (5, 5, 12, 255))
     sdraw = ImageDraw.Draw(strip)
 
@@ -570,24 +668,9 @@ def stitch_chapter_strip(
     )
 
     curr_y = header_h
-    for i, panel in enumerate(typeset_panels):
+    for panel in typeset_panels:
         strip.paste(panel, (0, curr_y), panel)
         curr_y += panel.size[1]
-        if i < len(typeset_panels) - 1:
-            gtxt = gutter_texts[i] if i < len(gutter_texts) else ""
-            bridge_img = create_seamless_transition_bridge(
-                panel_above=panel,
-                panel_below=typeset_panels[i + 1],
-                gutter_text=gtxt,
-                W=W,
-                bridge_h=gutter_h,
-                style_idx=i,
-            )
-            if bridges_out_paths and i < len(bridges_out_paths) and bridges_out_paths[i]:
-                bridge_img.convert("RGB").save(bridges_out_paths[i], quality=94)
-
-            strip.paste(bridge_img, (0, curr_y), bridge_img)
-            curr_y += gutter_h
 
     sdraw = ImageDraw.Draw(strip)
     draw_text_with_outline(
@@ -653,19 +736,16 @@ def render_project(project_id: str) -> dict:
                 c_cfg.get("role", "Nhân vật chính"),
             )
 
-    # 2. Render Tất Cả Các Chương (Multi-Chapter) & Cầu Nối Chuyển Cảnh (Transition Bridges)
+    # 2. Render Tất Cả Các Chương (Multi-Chapter) & Nối Cảnh Mờ Trực Tiếp Giữa Toàn Bộ Các Ảnh
     chapters = normalize_storyboard_chapters(sb)
     multi_chapter_mode = "chapters" in sb and len(sb["chapters"]) > 0
     chapter_strips = []
     total_panels = 0
 
+    all_panel_records = []
     for ch in chapters:
         ch_idx = int(ch.get("chapter_index", 1))
         ch_panels = ch.get("panels", [])
-        typeset_imgs = []
-        gutter_texts = []
-        bridges_out_paths = []
-
         for p_idx, p_cfg in enumerate(ch_panels, start=1):
             total_panels += 1
             if multi_chapter_mode:
@@ -677,22 +757,62 @@ def render_project(project_id: str) -> dict:
                 typeset_name = f"panel_{p_idx}_typeset.jpg"
                 bridge_name = f"bridge_{p_idx}.jpg"
 
+            old_bridge = os.path.join(proj_dir, bridge_name)
+            if os.path.exists(old_bridge):
+                try:
+                    os.remove(old_bridge)
+                except OSError:
+                    pass
+
             raw_path = os.path.join(proj_dir, raw_name)
-            # Fallback nếu chỉ có tên cũ panel_X_raw.jpg
             if not os.path.exists(raw_path) and os.path.exists(os.path.join(proj_dir, f"panel_{p_idx}_raw.jpg")):
                 raw_path = os.path.join(proj_dir, f"panel_{p_idx}_raw.jpg")
 
-            typeset_path = os.path.join(proj_dir, typeset_name)
-            img = render_single_panel(raw_path, typeset_path, p_cfg)
-            typeset_imgs.append(img)
+            loaded_img = load_and_prepare_raw_panel(raw_path, W=800)
+            all_panel_records.append(
+                {
+                    "ch_idx": ch_idx,
+                    "p_idx": p_idx,
+                    "p_cfg": p_cfg,
+                    "img": loaded_img,
+                    "orig_h": loaded_img.size[1],
+                    "typeset_path": os.path.join(proj_dir, typeset_name),
+                }
+            )
 
-            if p_idx < len(ch_panels):
-                bridges_out_paths.append(os.path.join(proj_dir, bridge_name))
-                if p_cfg.get("gutter_text"):
-                    gutter_texts.append(p_cfg.get("gutter_text"))
-                else:
-                    gutter_texts.append("")
+    if all_panel_records:
+        all_panel_records[0]["img"] = apply_vertical_fade(all_panel_records[0]["img"], fade_top=45, fade_bottom=0)
+        all_panel_records[-1]["img"] = apply_vertical_fade(all_panel_records[-1]["img"], fade_top=0, fade_bottom=50)
 
+        for k in range(len(all_panel_records) - 1):
+            gtxt = all_panel_records[k]["p_cfg"].get("gutter_text", "")
+            img_a, img_b = blend_two_panels_seamlessly(
+                all_panel_records[k]["img"],
+                all_panel_records[k + 1]["img"],
+                gutter_text=gtxt,
+                fade_h=55,
+            )
+            all_panel_records[k]["img"] = img_a
+            all_panel_records[k + 1]["img"] = img_b
+
+    n_all = len(all_panel_records)
+    all_typeset_imgs = []
+    by_chapter = {}
+    for k, rec in enumerate(all_panel_records):
+        t_img = typeset_prepared_panel(
+            rec["img"],
+            rec["typeset_path"],
+            rec["p_cfg"],
+            orig_h=rec["orig_h"],
+            has_top_transition=(k > 0),
+            has_bottom_transition=(k < n_all - 1),
+        )
+        all_typeset_imgs.append(t_img)
+        by_chapter.setdefault(rec["ch_idx"], []).append(t_img)
+
+    for ch in chapters:
+        ch_idx = int(ch.get("chapter_index", 1))
+        typeset_imgs = by_chapter.get(ch_idx, [])
         ch_strip_path = os.path.join(proj_dir, f"chapter_{ch_idx}_strip.jpg")
         ch_strip = stitch_chapter_strip(
             series_title=sb.get("title", "WEBTOON STUDIO"),
@@ -700,22 +820,22 @@ def render_project(project_id: str) -> dict:
             credits=sb.get("credits", "Nguyên tác Public Domain • AI Webtoon Studio"),
             footer_title=ch.get("footer_title", f"— HẾT CHƯƠNG {ch_idx} —"),
             typeset_panels=typeset_imgs,
-            gutter_texts=gutter_texts,
+            gutter_texts=[],
             out_path=ch_strip_path,
-            bridges_out_paths=bridges_out_paths,
         )
         chapter_strips.append(ch_strip)
 
-    # 3. Ghép Dải Ảnh Tổng Hợp Toàn Bộ Các Chương (Full Series Strip)
-    W = 800
-    full_h = sum(s.size[1] for s in chapter_strips)
-    full_strip = Image.new("RGBA", (W, max(1, full_h)), (5, 5, 12, 255))
-    cy = 0
-    for s in chapter_strips:
-        full_strip.paste(s, (0, cy))
-        cy += s.size[1]
+    # 3. Ghép Dải Ảnh Tổng Hợp Toàn Bộ Các Chương Liền Mạch (Full Series Strip)
     full_strip_path = os.path.join(proj_dir, "webtoon_full_strip.jpg")
-    full_strip.convert("RGB").save(full_strip_path, quality=92)
+    stitch_chapter_strip(
+        series_title=sb.get("title", "WEBTOON STUDIO"),
+        chapter_title=sb.get("subtitle", "TRỌN BỘ WEBTOON LIỀN MẠCH"),
+        credits=sb.get("credits", "Nguyên tác Public Domain • AI Webtoon Studio"),
+        footer_title="— ĐẠI KẾT CỤC • HOÀN THÀNH TRỌN BỘ —",
+        typeset_panels=all_typeset_imgs,
+        gutter_texts=[],
+        out_path=full_strip_path,
+    )
 
     # 4. Đóng gói Trọn Bộ Bộ Truyện vào File .ZIP
     zip_filename = f"{project_id}_webtoon.zip"
@@ -743,17 +863,13 @@ def render_project(project_id: str) -> dict:
                 if multi_chapter_mode:
                     r_p = os.path.join(proj_dir, f"ch{ch_idx}_panel_{p_idx}_raw.jpg")
                     t_p = os.path.join(proj_dir, f"ch{ch_idx}_panel_{p_idx}_typeset.jpg")
-                    b_p = os.path.join(proj_dir, f"ch{ch_idx}_bridge_{p_idx}.jpg")
                 else:
                     r_p = os.path.join(proj_dir, f"panel_{p_idx}_raw.jpg")
                     t_p = os.path.join(proj_dir, f"panel_{p_idx}_typeset.jpg")
-                    b_p = os.path.join(proj_dir, f"bridge_{p_idx}.jpg")
                 if os.path.exists(r_p):
                     zf.write(r_p, arcname=f"chapter_{ch_idx}/raw/panel_{p_idx}_raw.jpg")
                 if os.path.exists(t_p):
                     zf.write(t_p, arcname=f"chapter_{ch_idx}/typeset/panel_{p_idx}_typeset.jpg")
-                if os.path.exists(b_p):
-                    zf.write(b_p, arcname=f"chapter_{ch_idx}/bridges/bridge_{p_idx}.jpg")
 
     return {
         "project_id": project_id,
@@ -775,9 +891,9 @@ FULL_SERIES_SYSTEM_PROMPT = """Bạn là Tổng Đạo Diễn Webtoon Hàn Quố
 Nhiệm vụ: Khi người dùng yêu cầu tạo một bộ truyện, hãy thiết kế TRỌN BỘ TRUYỆN ĐẦY ĐỦ TỪ ĐẦU ĐẾN CUỐI gồm:
 1. Hồ sơ các nhân vật chính (`characters`) với `visual_dna` bằng tiếng Anh cực kỳ chi tiết và cố định (kiểu tóc, màu mắt, giáp trụ/trang phục, vũ khí, màu hào quang) để AI vẽ đồng bộ khuôn mặt và trang phục xuyên suốt mọi chương. Tự động xác định số lượng nhân vật cốt lõi cần có trong truyện.
 2. Tất cả các chương (`chapters`) bao trọn toàn bộ cốt truyện từ Mở đầu -> Phát triển -> Biến cố/Cao trào -> Đại kết cục. Nếu người dùng để chế độ Tự động (AI Quyết định), bạn hãy tự phân tích độ dài, nhịp độ kịch tính của cốt truyện để tự quyết định số lượng chương hợp lý nhất VÀ số lượng khung hình (panels) linh hoạt cho từng chương.
-3. CHUYỂN CẢNH MƯỢT MÀ GIỮA CÁC PANEL (SEAMLESS PANEL-TO-PANEL TRANSITIONS):
+3. CHUYỂN CẢNH LIỀN MẠCH GIỮA CÁC PANEL (SEAMLESS COLOR-SYNCED TRANSITIONS):
    - Thiết kế góc máy nối tiếp điện ảnh (Action-to-Action & Match-Cut Continuity): Cảnh toàn (Establishing Wide Shot) -> Trung cảnh hành động (Medium Action Shot) -> Cận cảnh biểu cảm/ánh mắt (Extreme Close-Up) -> Góc máy từ dưới lên uy nghi (Dramatic Low Angle).
-   - Ở mỗi khung hình (trừ khung cuối chương), LUÔN viết `gutter_text` (câu dẫn chuyển cảnh giàu cảm xúc/nhịp điệu nối liền hành động hoặc thời gian sang khung kế tiếp) để hệ thống vẽ Cầu nối chuyển cảnh sương mù & dải sáng (Seamless Transition Bridge).
+   - Ở mỗi khung hình (trừ khung cuối cùng của bộ truyện), LUÔN viết `gutter_text` (câu dẫn chuyển cảnh giàu cảm xúc/nhịp điệu nối liền hành động sang khung kế tiếp) để hệ thống vẽ nổi trực tiếp trên dải màu hòa quyện giữa 2 bức ảnh (không dùng UI đen tách biệt).
 
 Trả về DUY NHẤT một chuỗi JSON hợp lệ (không bọc trong markdown ```json) theo cấu trúc:
 {
@@ -808,7 +924,7 @@ Trả về DUY NHẤT một chuỗi JSON hợp lệ (không bọc trong markdown
           "narrations": [
             {
               "text": "Lời dẫn truyện tiếng Việt",
-              "x": 400, "y": 100, "w": 660, "h": 95,
+              "x": 400, "y": 115, "w": 660, "h": 95,
               "border_color": [250, 204, 21, 235],
               "text_color": [245, 245, 255, 255],
               "font_size": 21
@@ -834,7 +950,7 @@ Trả về DUY NHẤT một chuỗi JSON hợp lệ (không bọc trong markdown
               "font_size": 22
             }
           ],
-          "gutter_text": "Câu dẫn chuyển cảnh đầy kịch tính nằm ở khoảng đen giữa 2 khung hình..."
+          "gutter_text": "Câu dẫn chuyển cảnh đầy kịch tính nổi trực tiếp trên dải màu hòa quyện giữa 2 khung hình..."
         }
       ]
     }

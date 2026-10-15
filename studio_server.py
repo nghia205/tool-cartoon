@@ -56,7 +56,8 @@ def get_project_details(project_id: str) -> dict:
     with open(sb_path, "r", encoding="utf-8") as f:
         sb = json.load(f)
 
-    ts = int(os.path.getmtime(sb_path))
+    strip_p = os.path.join(proj_dir, "webtoon_full_strip.jpg")
+    ts = int(max(os.path.getmtime(sb_path), os.path.getmtime(strip_p) if os.path.exists(strip_p) else 0))
     multi_chapter_mode = "chapters" in sb and len(sb["chapters"]) > 0
     chapters_norm = normalize_storyboard_chapters(sb)
 
@@ -133,12 +134,15 @@ class StudioHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=BASE_DIR, **kwargs)
 
+    def end_headers(self):
+        self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+        super().end_headers()
+
     def _send_json(self, data: dict, status=200):
         raw = json.dumps(data, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(raw)))
-        self.send_header("Cache-Control", "no-store")
         self.end_headers()
         self.wfile.write(raw)
 
