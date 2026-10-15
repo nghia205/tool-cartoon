@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """
-AI Webtoon Studio Server (Web UI + REST API)
---------------------------------------------
+AI Webtoon Studio Server (Full-Series Multi-Chapter + Character Consistency API)
+--------------------------------------------------------------------------------
 Chạy lệnh: python3 studio_server.py
 Mở trình duyệt: http://localhost:8080
 """
 import os
 import json
-import mimetypes
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from urllib.parse import urlparse
 from studio_engine import (
     BASE_DIR,
     PROJECTS_DIR,
+    normalize_storyboard_chapters,
     render_project,
     create_full_webtoon_from_prompt,
 )
@@ -55,24 +55,71 @@ def get_project_details(project_id: str) -> dict:
         return None
     with open(sb_path, "r", encoding="utf-8") as f:
         sb = json.load(f)
-    panel_count = len(sb.get("panels", []))
+
     ts = int(os.path.getmtime(sb_path))
-    panels_info = []
-    for i in range(1, panel_count + 1):
-        panels_info.append(
+    multi_chapter_mode = "chapters" in sb and len(sb["chapters"]) > 0
+    chapters_norm = normalize_storyboard_chapters(sb)
+
+    # 1. Character Sheets
+    characters_info = []
+    for c_cfg in sb.get("characters", []):
+        cid = c_cfg.get("id", "char")
+        characters_info.append(
             {
-                "index": i,
-                "raw_url": f"/projects/{project_id}/panel_{i}_raw.jpg?t={ts}",
-                "typeset_url": f"/projects/{project_id}/panel_{i}_typeset.jpg?t={ts}",
+                "id": cid,
+                "name": c_cfg.get("name", cid),
+                "role": c_cfg.get("role", ""),
+                "visual_dna": c_cfg.get("visual_dna", ""),
+                "raw_url": f"/projects/{project_id}/char_{cid}_raw.jpg?t={ts}",
+                "sheet_url": f"/projects/{project_id}/char_{cid}_sheet.jpg?t={ts}",
             }
         )
+
+    # 2. Chapters & Panels
+    chapters_info = []
+    total_panels = 0
+    for ch in chapters_norm:
+        ch_idx = int(ch.get("chapter_index", 1))
+        panels_list = []
+        for p_idx, p_cfg in enumerate(ch.get("panels", []), start=1):
+            total_panels += 1
+            if multi_chapter_mode:
+                raw_name = f"ch{ch_idx}_panel_{p_idx}_raw.jpg"
+                typeset_name = f"ch{ch_idx}_panel_{p_idx}_typeset.jpg"
+            else:
+                raw_name = f"panel_{p_idx}_raw.jpg"
+                typeset_name = f"panel_{p_idx}_typeset.jpg"
+
+            panels_list.append(
+                {
+                    "index": p_idx,
+                    "scene_title": p_cfg.get("scene_title", f"Khung {p_idx}"),
+                    "gutter_text": p_cfg.get("gutter_text", ""),
+                    "raw_url": f"/projects/{project_id}/{raw_name}?t={ts}",
+                    "typeset_url": f"/projects/{project_id}/{typeset_name}?t={ts}",
+                }
+            )
+        chapters_info.append(
+            {
+                "chapter_index": ch_idx,
+                "chapter_title": ch.get("chapter_title", f"CHƯƠNG {ch_idx}"),
+                "footer_title": ch.get("footer_title", ""),
+                "strip_url": f"/projects/{project_id}/chapter_{ch_idx}_strip.jpg?t={ts}",
+                "panels": panels_list,
+            }
+        )
+
     return {
         "project_id": project_id,
         "title": sb.get("title", project_id),
         "subtitle": sb.get("subtitle", ""),
-        "panel_count": panel_count,
+        "credits": sb.get("credits", ""),
+        "chapter_count": len(chapters_info),
+        "panel_count": total_panels,
+        "character_count": len(characters_info),
+        "characters": characters_info,
+        "chapters": chapters_info,
         "storyboard": sb,
-        "panels": panels_info,
         "strip_url": f"/projects/{project_id}/webtoon_full_strip.jpg?t={ts}",
         "zip_url": f"/projects/{project_id}/{project_id}_webtoon.zip",
     }
@@ -119,7 +166,9 @@ class StudioHandler(SimpleHTTPRequestHandler):
                                 "project_id": info["project_id"],
                                 "title": info["title"],
                                 "subtitle": info["subtitle"],
+                                "chapter_count": info["chapter_count"],
                                 "panel_count": info["panel_count"],
+                                "character_count": info["character_count"],
                                 "strip_url": info["strip_url"],
                                 "zip_url": info["zip_url"],
                             }
@@ -146,7 +195,8 @@ class StudioHandler(SimpleHTTPRequestHandler):
                 prompt = body.get("prompt", "").strip()
                 if not prompt:
                     return self._send_json({"error": "Vui lòng nhập yêu cầu tạo truyện!"}, 400)
-                num_panels = int(body.get("num_panels", 5))
+                num_chapters = int(body.get("num_chapters", 3))
+                panels_per_chapter = int(body.get("panels_per_chapter", 4))
                 provider = body.get("provider", "gemini")
                 api_key = body.get("api_key", "").strip()
 
@@ -162,14 +212,15 @@ class StudioHandler(SimpleHTTPRequestHandler):
 
                 res = create_full_webtoon_from_prompt(
                     prompt=prompt,
-                    num_panels=num_panels,
+                    num_chapters=num_chapters,
+                    panels_per_chapter=panels_per_chapter,
                     provider=provider,
                     api_key=api_key,
                 )
                 details = get_project_details(res["project_id"])
                 return self._send_json({"status": "ok", "project": details})
             except Exception as e:
-                return self._send_json({"error": f"Lỗi khi tạo Webtoon: {str(e)}"}, 500)
+                return self._send_json({"error": f"Lỗi khi tạo trọn bộ Webtoon: {str(e)}"}, 500)
 
         if path == "/api/render":
             try:

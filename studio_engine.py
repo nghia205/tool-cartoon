@@ -1,21 +1,22 @@
 #!/usr/bin/env python3
 """
-AI Webtoon Studio Engine (Core Pipeline)
-----------------------------------------
-Từ 1 câu yêu cầu (Prompt) + API Key:
-1. Gọi LLM (Gemini / OpenAI) sinh kịch bản phân cảnh (Storyboard JSON) + Character Bible.
-2. Gọi AI Image API (Gemini Imagen / Gemini Flash Image / OpenAI DALL-E 3 / Pollinations Flux)
-   để vẽ từng khung hình dọc (Vertical Manhwa Panels) không chứa chữ rác.
-3. Tự động hậu kỳ (Auto-Typesetting): Làm tối viền chuyển cảnh, đóng hộp dẫn truyện,
-   vẽ bóng thoại tiếng Việt có đuôi trỏ, vẽ chữ tượng thanh (SFX) phát sáng.
-4. Xuất ra trọn bộ file ảnh từng khung, ảnh cuộn dọc nguyên cột (Full Strip) và gói .ZIP.
+AI Webtoon Studio Engine (Full-Series Multi-Chapter + Character Consistency Pipeline)
+-------------------------------------------------------------------------------------
+Chỉ cần 1 câu Prompt (VD: "Hãy tạo cho tôi toàn bộ truyện tranh về Sơn Tinh Thủy Tinh"):
+1. AI Director (LLM): Thiết kế trọn bộ kịch bản từ đầu đến cuối (nhiều Chương hoàn chỉnh)
+   + Hồ sơ Nhân Vật Đồng Bộ (Character Visual DNA & Character Reference Sheets).
+2. AI Character Artist: Vẽ bảng thiết kế nhân vật (Character Reference Sheets) trước.
+3. AI Panel Artist: Vẽ toàn bộ các khung hình của TẤT CẢ các chương, tự động nhúng
+   Visual DNA + ảnh tham chiếu nhân vật để giữ nét vẽ nhân vật đồng nhất xuyên suốt.
+4. Auto-Typesetter (Pillow): Đóng hộp dẫn truyện, bóng thoại tiếng Việt, chữ tượng thanh (SFX),
+   xuất dải ảnh dọc cho từng chương (chapter_X_strip.jpg), dải ảnh toàn bộ truyện
+   (webtoon_full_strip.jpg) và đóng gói trọn bộ vào file .ZIP.
 """
 import os
 import re
 import json
 import math
 import time
-import shutil
 import base64
 import zipfile
 import urllib.parse
@@ -132,7 +133,6 @@ def draw_narration_box(
     draw = ImageDraw.Draw(overlay)
     font = get_font(FONT_BOLD, font_size)
 
-    # Auto-measure text bounding box so text never overflows box
     bbox = draw.multiline_textbbox((0, 0), text, font=font, align="center", spacing=7)
     tw = bbox[2] - bbox[0]
     th = bbox[3] - bbox[1]
@@ -185,7 +185,6 @@ def draw_speech_bubble(
     draw = ImageDraw.Draw(overlay)
     font = get_font(FONT_BOLD_ITALIC if dark_mode else FONT_BOLD, font_size)
 
-    # Auto-measure text bounding box so text fits comfortably inside ellipse
     bbox = draw.multiline_textbbox((0, 0), text, font=font, align="center", spacing=6)
     tw = bbox[2] - bbox[0]
     th = bbox[3] - bbox[1]
@@ -288,112 +287,126 @@ def draw_sfx(
     return Image.alpha_composite(canvas, overlay)
 
 
-def render_project(project_id: str) -> dict:
-    """
-    Đọc storyboard.json và các ảnh panel_X_raw.jpg trong thư mục project,
-    sau đó tự động render:
-      - panel_X_typeset.jpg
-      - webtoon_full_strip.jpg
-      - <project_id>_webtoon.zip (chứa đầy đủ toàn bộ file ảnh để tải về)
-    """
-    proj_dir = os.path.join(PROJECTS_DIR, project_id)
-    sb_path = os.path.join(proj_dir, "storyboard.json")
-    if not os.path.exists(sb_path):
-        raise FileNotFoundError(f"Không tìm thấy {sb_path}")
-
-    with open(sb_path, "r", encoding="utf-8") as f:
-        sb = json.load(f)
-
+def render_character_sheet_card(raw_path: str, out_path: str, name: str, role: str):
+    """Đóng khung thẻ Hồ Sơ Nhân Vật (Character Reference Sheet Card) chuyên nghiệp."""
     W = 800
-    typeset_panels = []
-    gutter_texts = []
+    if not os.path.exists(raw_path):
+        placeholder = Image.new("RGB", (W, 1000), (16, 18, 36))
+        placeholder.save(raw_path, quality=92)
 
-    for idx, p_cfg in enumerate(sb.get("panels", []), start=1):
-        raw_path = os.path.join(proj_dir, f"panel_{idx}_raw.jpg")
-        if not os.path.exists(raw_path):
-            # Tạo ảnh placeholder nếu chưa có
-            placeholder = Image.new("RGB", (W, 1200), (18, 18, 34))
-            placeholder.save(raw_path, quality=92)
+    img = Image.open(raw_path).convert("RGBA")
+    pw, ph = img.size
+    new_h = int(ph * (W / pw))
+    img = img.resize((W, new_h), Image.LANCZOS)
+    img = apply_vertical_fade(img, fade_top=70, fade_bottom=150)
 
-        img = Image.open(raw_path).convert("RGBA")
-        pw, ph = img.size
-        new_h = int(ph * (W / pw))
-        img = img.resize((W, new_h), Image.LANCZOS)
-        img = apply_vertical_fade(img, fade_top=110, fade_bottom=130)
+    img = draw_narration_box(
+        img,
+        center_x=W // 2,
+        center_y=new_h - 85,
+        width=680,
+        height=96,
+        text=f"HỒ SƠ NHÂN VẬT: {name.upper()}\n{role}",
+        border_color=(250, 204, 21, 245),
+        text_color=(254, 249, 195, 255),
+        font_size=22,
+    )
+    img.convert("RGB").save(out_path, quality=95)
 
-        # 1. Vẽ Narration Boxes
-        for nar in p_cfg.get("narrations", []):
-            txt = wrap_vietnamese_text(nar.get("text", ""), nar.get("wrap", 38))
-            cx = int(nar.get("x", 400))
-            cy_raw = nar.get("y", 110)
-            cy = int(new_h + cy_raw) if cy_raw < 0 else int(cy_raw)
-            bw = int(nar.get("w", 660))
-            bh = int(nar.get("h", 105))
-            bcol = tuple(nar.get("border_color", [250, 204, 21, 235]))
-            tcol = tuple(nar.get("text_color", [245, 245, 255, 255]))
-            img = draw_narration_box(
-                img,
-                center_x=cx,
-                center_y=cy,
-                width=bw,
-                height=bh,
-                text=txt,
-                border_color=bcol,
-                text_color=tcol,
-                font_size=int(nar.get("font_size", 22)),
-            )
 
-        # 2. Vẽ SFX
-        for sfx in p_cfg.get("sfx", []):
-            sx = int(sfx.get("x", 400))
-            sy_raw = sfx.get("y", 450)
-            sy = int(new_h + sy_raw) if sy_raw < 0 else int(sy_raw)
-            img = draw_sfx(
-                img,
-                pos=(sx, sy),
-                text=sfx.get("text", "ẦM ĐOÀNG!!"),
-                font_size=int(sfx.get("font_size", 54)),
-                color=tuple(sfx.get("color", [250, 204, 21, 255])),
-                glow_color=tuple(sfx.get("glow_color", [239, 68, 68, 255])),
-                angle=int(sfx.get("angle", -8)),
-            )
+def render_single_panel(raw_path: str, out_path: str, p_cfg: dict, W: int = 800) -> Image.Image:
+    if not os.path.exists(raw_path):
+        placeholder = Image.new("RGB", (W, 1200), (18, 18, 34))
+        placeholder.save(raw_path, quality=92)
 
-        # 3. Vẽ Speech Bubbles
-        for bub in p_cfg.get("bubbles", []):
-            txt = wrap_vietnamese_text(bub.get("text", ""), bub.get("wrap", 25))
-            bx = int(bub.get("x", 240))
-            by_raw = bub.get("y", 140)
-            by = int(new_h + by_raw) if by_raw < 0 else int(by_raw)
-            rx = int(bub.get("rx", 210))
-            ry = int(bub.get("ry", 74))
-            tail = bub.get("tail")
-            if tail and len(tail) == 2:
-                tx = int(tail[0])
-                ty = int(new_h + tail[1]) if tail[1] < 0 else int(tail[1])
-                tail = (tx, ty)
-            else:
-                tail = None
-            img = draw_speech_bubble(
-                img,
-                center_x=bx,
-                center_y=by,
-                rx=rx,
-                ry=ry,
-                text=txt,
-                tail_target=tail,
-                dark_mode=bool(bub.get("dark_mode", False)),
-                font_size=int(bub.get("font_size", 23)),
-            )
+    img = Image.open(raw_path).convert("RGBA")
+    pw, ph = img.size
+    new_h = int(ph * (W / pw))
+    img = img.resize((W, new_h), Image.LANCZOS)
+    img = apply_vertical_fade(img, fade_top=110, fade_bottom=130)
 
-        typeset_path = os.path.join(proj_dir, f"panel_{idx}_typeset.jpg")
-        img.convert("RGB").save(typeset_path, quality=95)
-        typeset_panels.append(img)
-        if p_cfg.get("gutter_text"):
-            gutter_texts.append(p_cfg.get("gutter_text"))
-        elif idx < len(sb.get("panels", [])):
-            gutter_texts.append("...")
+    for nar in p_cfg.get("narrations", []):
+        txt = wrap_vietnamese_text(nar.get("text", ""), nar.get("wrap", 38))
+        if not txt.strip():
+            continue
+        cx = int(nar.get("x", 400))
+        cy_raw = nar.get("y", 110)
+        cy = int(new_h + cy_raw) if cy_raw < 0 else int(cy_raw)
+        bw = int(nar.get("w", 660))
+        bh = int(nar.get("h", 105))
+        bcol = tuple(nar.get("border_color", [250, 204, 21, 235]))
+        tcol = tuple(nar.get("text_color", [245, 245, 255, 255]))
+        img = draw_narration_box(
+            img,
+            center_x=cx,
+            center_y=cy,
+            width=bw,
+            height=bh,
+            text=txt,
+            border_color=bcol,
+            text_color=tcol,
+            font_size=int(nar.get("font_size", 22)),
+        )
 
-    # --- GHÉP FILE WEBTOON DỌC NGUYÊN CỘT (FULL VERTICAL STRIP) ---
+    for sfx in p_cfg.get("sfx", []):
+        stxt = sfx.get("text", "").strip()
+        if not stxt:
+            continue
+        sx = int(sfx.get("x", 400))
+        sy_raw = sfx.get("y", 450)
+        sy = int(new_h + sy_raw) if sy_raw < 0 else int(sy_raw)
+        img = draw_sfx(
+            img,
+            pos=(sx, sy),
+            text=stxt,
+            font_size=int(sfx.get("font_size", 54)),
+            color=tuple(sfx.get("color", [250, 204, 21, 255])),
+            glow_color=tuple(sfx.get("glow_color", [239, 68, 68, 255])),
+            angle=int(sfx.get("angle", -8)),
+        )
+
+    for bub in p_cfg.get("bubbles", []):
+        txt = wrap_vietnamese_text(bub.get("text", ""), bub.get("wrap", 25))
+        if not txt.strip():
+            continue
+        bx = int(bub.get("x", 240))
+        by_raw = bub.get("y", 140)
+        by = int(new_h + by_raw) if by_raw < 0 else int(by_raw)
+        rx = int(bub.get("rx", 210))
+        ry = int(bub.get("ry", 74))
+        tail = bub.get("tail")
+        if tail and len(tail) == 2:
+            tx = int(tail[0])
+            ty = int(new_h + tail[1]) if tail[1] < 0 else int(tail[1])
+            tail = (tx, ty)
+        else:
+            tail = None
+        img = draw_speech_bubble(
+            img,
+            center_x=bx,
+            center_y=by,
+            rx=rx,
+            ry=ry,
+            text=txt,
+            tail_target=tail,
+            dark_mode=bool(bub.get("dark_mode", False)),
+            font_size=int(bub.get("font_size", 23)),
+        )
+
+    img.convert("RGB").save(out_path, quality=95)
+    return img
+
+
+def stitch_chapter_strip(
+    series_title: str,
+    chapter_title: str,
+    credits: str,
+    footer_title: str,
+    typeset_panels: list,
+    gutter_texts: list,
+    out_path: str,
+    W: int = 800,
+) -> Image.Image:
     header_h = 260
     gutter_h = 185
     footer_h = 220
@@ -410,8 +423,8 @@ def render_project(project_id: str) -> dict:
     draw_text_with_outline(
         sdraw,
         (W // 2, 72),
-        sb.get("title", "WEBTOON STUDIO").upper(),
-        get_font(FONT_BOLD, 36),
+        series_title.upper(),
+        get_font(FONT_BOLD, 34),
         fill=(250, 204, 21, 255),
         outline_color=(0, 0, 0, 255),
         outline_width=4,
@@ -419,7 +432,7 @@ def render_project(project_id: str) -> dict:
     draw_text_with_outline(
         sdraw,
         (W // 2, 132),
-        sb.get("subtitle", "CHƯƠNG 1").upper(),
+        chapter_title.upper(),
         get_font(FONT_BOLD, 25),
         fill=(103, 232, 249, 255),
         outline_color=(0, 0, 0, 255),
@@ -428,7 +441,7 @@ def render_project(project_id: str) -> dict:
     draw_text_with_outline(
         sdraw,
         (W // 2, 185),
-        sb.get("credits", "Nguyên tác Public Domain • Sản xuất bởi AI Webtoon Studio"),
+        credits,
         get_font(FONT_REGULAR, 17),
         fill=(160, 170, 195, 255),
         outline_color=(0, 0, 0, 255),
@@ -446,7 +459,7 @@ def render_project(project_id: str) -> dict:
                     sdraw,
                     (W // 2, curr_y + gutter_h // 2),
                     gtxt,
-                    get_font(FONT_BOLD_ITALIC, 23),
+                    get_font(FONT_BOLD_ITALIC, 22),
                     fill=(253, 224, 71, 255) if i % 2 == 1 else (165, 243, 252, 255),
                     outline_color=(0, 0, 0, 255),
                     outline_width=3,
@@ -456,8 +469,8 @@ def render_project(project_id: str) -> dict:
     draw_text_with_outline(
         sdraw,
         (W // 2, curr_y + 80),
-        sb.get("footer_title", "— HẾT CHƯƠNG 1: ĐÓN ĐỌC CHƯƠNG TIẾP THEO —"),
-        get_font(FONT_BOLD, 25),
+        footer_title,
+        get_font(FONT_BOLD, 24),
         fill=(250, 204, 21, 255),
         outline_color=(0, 0, 0, 255),
         outline_width=3,
@@ -472,107 +485,248 @@ def render_project(project_id: str) -> dict:
         outline_width=2,
     )
 
-    strip_path = os.path.join(proj_dir, "webtoon_full_strip.jpg")
-    strip.convert("RGB").save(strip_path, quality=94)
+    strip.convert("RGB").save(out_path, quality=93)
+    return strip
 
-    # --- ĐÓNG GÓI TRỌN BỘ ẢNH THÀNH FILE .ZIP ĐỂ TẢI VỀ ---
+
+def normalize_storyboard_chapters(sb: dict) -> list:
+    """Đảm bảo tương thích cả chuẩn mới (nhiều chương `chapters`) và chuẩn cũ (`panels`)."""
+    if "chapters" in sb and isinstance(sb["chapters"], list) and len(sb["chapters"]) > 0:
+        return sb["chapters"]
+    return [
+        {
+            "chapter_index": 1,
+            "chapter_title": sb.get("subtitle", "CHƯƠNG 1"),
+            "footer_title": sb.get("footer_title", "— HẾT CHƯƠNG 1 —"),
+            "panels": sb.get("panels", []),
+        }
+    ]
+
+
+def render_project(project_id: str) -> dict:
+    """
+    Render toàn bộ một bộ truyện (gồm Hồ sơ nhân vật + Tất cả các chương + File ZIP trọn bộ).
+    """
+    proj_dir = os.path.join(PROJECTS_DIR, project_id)
+    sb_path = os.path.join(proj_dir, "storyboard.json")
+    if not os.path.exists(sb_path):
+        raise FileNotFoundError(f"Không tìm thấy {sb_path}")
+
+    with open(sb_path, "r", encoding="utf-8") as f:
+        sb = json.load(f)
+
+    # 1. Render Character Reference Sheet Cards
+    characters = sb.get("characters", [])
+    for c_cfg in characters:
+        cid = c_cfg.get("id", "char")
+        raw_c = os.path.join(proj_dir, f"char_{cid}_raw.jpg")
+        card_c = os.path.join(proj_dir, f"char_{cid}_sheet.jpg")
+        if os.path.exists(raw_c):
+            render_character_sheet_card(
+                raw_c,
+                card_c,
+                c_cfg.get("name", cid),
+                c_cfg.get("role", "Nhân vật chính"),
+            )
+
+    # 2. Render Tất Cả Các Chương (Multi-Chapter)
+    chapters = normalize_storyboard_chapters(sb)
+    multi_chapter_mode = "chapters" in sb and len(sb["chapters"]) > 0
+    chapter_strips = []
+    total_panels = 0
+
+    for ch in chapters:
+        ch_idx = int(ch.get("chapter_index", 1))
+        ch_panels = ch.get("panels", [])
+        typeset_imgs = []
+        gutter_texts = []
+
+        for p_idx, p_cfg in enumerate(ch_panels, start=1):
+            total_panels += 1
+            if multi_chapter_mode:
+                raw_name = f"ch{ch_idx}_panel_{p_idx}_raw.jpg"
+                typeset_name = f"ch{ch_idx}_panel_{p_idx}_typeset.jpg"
+            else:
+                raw_name = f"panel_{p_idx}_raw.jpg"
+                typeset_name = f"panel_{p_idx}_typeset.jpg"
+
+            raw_path = os.path.join(proj_dir, raw_name)
+            # Fallback nếu chỉ có tên cũ panel_X_raw.jpg
+            if not os.path.exists(raw_path) and os.path.exists(os.path.join(proj_dir, f"panel_{p_idx}_raw.jpg")):
+                raw_path = os.path.join(proj_dir, f"panel_{p_idx}_raw.jpg")
+
+            typeset_path = os.path.join(proj_dir, typeset_name)
+            img = render_single_panel(raw_path, typeset_path, p_cfg)
+            typeset_imgs.append(img)
+
+            if p_cfg.get("gutter_text"):
+                gutter_texts.append(p_cfg.get("gutter_text"))
+            elif p_idx < len(ch_panels):
+                gutter_texts.append("...")
+
+        ch_strip_path = os.path.join(proj_dir, f"chapter_{ch_idx}_strip.jpg")
+        ch_strip = stitch_chapter_strip(
+            series_title=sb.get("title", "WEBTOON STUDIO"),
+            chapter_title=ch.get("chapter_title", f"CHƯƠNG {ch_idx}"),
+            credits=sb.get("credits", "Nguyên tác Public Domain • AI Webtoon Studio"),
+            footer_title=ch.get("footer_title", f"— HẾT CHƯƠNG {ch_idx} —"),
+            typeset_panels=typeset_imgs,
+            gutter_texts=gutter_texts,
+            out_path=ch_strip_path,
+        )
+        chapter_strips.append(ch_strip)
+
+    # 3. Ghép Dải Ảnh Tổng Hợp Toàn Bộ Các Chương (Full Series Strip)
+    W = 800
+    full_h = sum(s.size[1] for s in chapter_strips)
+    full_strip = Image.new("RGBA", (W, max(1, full_h)), (5, 5, 12, 255))
+    cy = 0
+    for s in chapter_strips:
+        full_strip.paste(s, (0, cy))
+        cy += s.size[1]
+    full_strip_path = os.path.join(proj_dir, "webtoon_full_strip.jpg")
+    full_strip.convert("RGB").save(full_strip_path, quality=92)
+
+    # 4. Đóng gói Trọn Bộ Bộ Truyện vào File .ZIP
     zip_filename = f"{project_id}_webtoon.zip"
     zip_path = os.path.join(proj_dir, zip_filename)
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.write(sb_path, arcname="storyboard.json")
-        zf.write(strip_path, arcname="webtoon_full_strip.jpg")
-        for idx in range(1, len(typeset_panels) + 1):
-            r_p = os.path.join(proj_dir, f"panel_{idx}_raw.jpg")
-            t_p = os.path.join(proj_dir, f"panel_{idx}_typeset.jpg")
-            if os.path.exists(r_p):
-                zf.write(r_p, arcname=f"raw/panel_{idx}_raw.jpg")
-            if os.path.exists(t_p):
-                zf.write(t_p, arcname=f"typeset/panel_{idx}_typeset.jpg")
+        zf.write(full_strip_path, arcname="webtoon_full_series_strip.jpg")
+
+        for c_cfg in characters:
+            cid = c_cfg.get("id", "char")
+            raw_c = os.path.join(proj_dir, f"char_{cid}_raw.jpg")
+            card_c = os.path.join(proj_dir, f"char_{cid}_sheet.jpg")
+            if os.path.exists(raw_c):
+                zf.write(raw_c, arcname=f"characters/char_{cid}_raw.jpg")
+            if os.path.exists(card_c):
+                zf.write(card_c, arcname=f"characters/char_{cid}_sheet.jpg")
+
+        for ch in chapters:
+            ch_idx = int(ch.get("chapter_index", 1))
+            ch_strip_p = os.path.join(proj_dir, f"chapter_{ch_idx}_strip.jpg")
+            if os.path.exists(ch_strip_p):
+                zf.write(ch_strip_p, arcname=f"chapter_{ch_idx}/chapter_{ch_idx}_strip.jpg")
+
+            for p_idx in range(1, len(ch.get("panels", [])) + 1):
+                if multi_chapter_mode:
+                    r_p = os.path.join(proj_dir, f"ch{ch_idx}_panel_{p_idx}_raw.jpg")
+                    t_p = os.path.join(proj_dir, f"ch{ch_idx}_panel_{p_idx}_typeset.jpg")
+                else:
+                    r_p = os.path.join(proj_dir, f"panel_{p_idx}_raw.jpg")
+                    t_p = os.path.join(proj_dir, f"panel_{p_idx}_typeset.jpg")
+                if os.path.exists(r_p):
+                    zf.write(r_p, arcname=f"chapter_{ch_idx}/raw/panel_{p_idx}_raw.jpg")
+                if os.path.exists(t_p):
+                    zf.write(t_p, arcname=f"chapter_{ch_idx}/typeset/panel_{p_idx}_typeset.jpg")
 
     return {
         "project_id": project_id,
         "title": sb.get("title"),
         "subtitle": sb.get("subtitle"),
-        "panel_count": len(typeset_panels),
+        "chapter_count": len(chapters),
+        "panel_count": total_panels,
+        "character_count": len(characters),
         "strip_url": f"/projects/{project_id}/webtoon_full_strip.jpg",
         "zip_url": f"/projects/{project_id}/{zip_filename}",
     }
 
 
 # ==============================================================================
-# 2. AI STORYBOARD & IMAGE GENERATION PIPELINE (GEMINI / OPENAI / POLLINATIONS)
+# 2. AI MULTI-CHAPTER STORYBOARD & CONSISTENT CHARACTER GENERATION PIPELINE
 # ==============================================================================
 
-STORYBOARD_SYSTEM_PROMPT = """Bạn là Đạo diễn Webtoon Hàn Quốc (Manhwa Director) chuyên chuyển thể truyện cổ tích, dã sử, tiểu thuyết sang phong cách hành động thần thoại (như Solo Leveling, Omniscient Reader).
-Nhiệm vụ: Dựa trên yêu cầu của người dùng, hãy thiết kế 1 chương Webtoon hoàn chỉnh và trả về DUY NHẤT một chuỗi JSON hợp lệ (không bọc trong markdown ```json) theo cấu trúc sau:
+FULL_SERIES_SYSTEM_PROMPT = """Bạn là Tổng Đạo Diễn Webtoon Hàn Quốc (Manhwa Series Showrunner) chuyên chuyển thể truyện cổ tích, dã sử, thần thoại sang trọn bộ Webtoon hành động thần thoại (như Solo Leveling, Omniscient Reader).
+Nhiệm vụ: Khi người dùng yêu cầu tạo một bộ truyện, hãy thiết kế TRỌN BỘ TRUYỆN ĐẦY ĐỦ TỪ ĐẦU ĐẾN CUỐI gồm:
+1. Hồ sơ các nhân vật chính (`characters`) với `visual_dna` bằng tiếng Anh cực kỳ chi tiết và cố định (kiểu tóc, màu mắt, giáp trụ/trang phục, vũ khí, màu hào quang) để AI vẽ đồng bộ khuôn mặt và trang phục xuyên suốt mọi chương.
+2. Tất cả các chương (`chapters`) bao trọn toàn bộ cốt truyện từ Mở đầu -> Phát triển -> Cao trào -> Đại kết cục.
+
+Trả về DUY NHẤT một chuỗi JSON hợp lệ (không bọc trong markdown ```json) theo cấu trúc:
 {
-  "title": "Tên Bộ Truyện (In hoa, ngắn gọn, hấp dẫn)",
-  "subtitle": "CHƯƠNG 1: Tên chương kịch tính",
-  "credits": "Nguyên tác: Public Domain • AI-Assisted Manhwa Studio",
-  "footer_title": "— ĐÓN ĐỌC CHƯƠNG 2: ... —",
-  "character_bible": "Mô tả ngoại hình nhân vật chính bằng tiếng Anh để giữ đồng nhất nét vẽ",
-  "panels": [
+  "title": "TÊN BỘ TRUYỆN (IN HOA)",
+  "subtitle": "TRỌN BỘ WEBTOON HOÀN CHỈNH",
+  "credits": "Nguyên tác: Public Domain • AI Webtoon Studio",
+  "characters": [
     {
-      "panel_index": 1,
-      "scene_title": "Tên phân cảnh",
-      "image_prompt": "Detailed English prompt for a vertical Korean action fantasy manhwa panel (Solo Leveling style, sharp line art, cel-shaded digital illustration, dramatic glowing lighting). Describe the characters, outfits, action, camera angle, background. DO NOT include any text, letters, or speech bubbles.",
-      "narrations": [
+      "id": "son_tinh",
+      "name": "Sơn Tinh (Thánh Tản Viên)",
+      "role": "Nam chính • Thần Núi Tản Viên",
+      "visual_dna": "22-year-old noble Vietnamese Mountain Deity, sharp heroic jawline, raven-black hair tied in a high warrior topknot with a golden hairpin, glowing amber-gold eyes, wearing dark forest-green and bronze scale armor etched with glowing golden Dong Son sun patterns, flowing dark green cape.",
+      "sheet_prompt": "Korean Fantasy Manhwa Character Reference Sheet (full-body pose on left + close-up portrait on right), dark studio background with golden particles, NO TEXT."
+    }
+  ],
+  "chapters": [
+    {
+      "chapter_index": 1,
+      "chapter_title": "CHƯƠNG 1: TÊN CHƯƠNG MỞ ĐẦU",
+      "footer_title": "— ĐÓN ĐỌC CHƯƠNG 2: ... —",
+      "panels": [
         {
-          "text": "Lời dẫn truyện tiếng Việt ngắn gọn, hào hùng",
-          "x": 400, "y": 110, "w": 660, "h": 105,
-          "border_color": [250, 204, 21, 235],
-          "text_color": [245, 245, 255, 255],
-          "font_size": 22
+          "panel_index": 1,
+          "scene_title": "Tên phân cảnh",
+          "characters_present": ["son_tinh"],
+          "image_prompt": "Detailed English prompt for a vertical Korean action fantasy manhwa panel (Solo Leveling style, sharp line art, cel-shaded digital illustration). Describe action, camera angle, lighting, background. DO NOT include any text, letters, or speech bubbles.",
+          "narrations": [
+            {
+              "text": "Lời dẫn truyện tiếng Việt",
+              "x": 400, "y": 100, "w": 660, "h": 95,
+              "border_color": [250, 204, 21, 235],
+              "text_color": [245, 245, 255, 255],
+              "font_size": 21
+            }
+          ],
+          "sfx": [
+            {
+              "text": "ẦM ĐOÀNG!!",
+              "x": 500, "y": 460,
+              "font_size": 52,
+              "color": [250, 204, 21, 255],
+              "glow_color": [239, 68, 68, 255],
+              "angle": -10
+            }
+          ],
+          "bubbles": [
+            {
+              "text": "Lời thoại nhân vật tiếng Việt!",
+              "x": 230, "y": -115,
+              "rx": 215, "ry": 72,
+              "tail": [360, -280],
+              "dark_mode": false,
+              "font_size": 22
+            }
+          ],
+          "gutter_text": "Câu dẫn chuyển cảnh đầy kịch tính nằm ở khoảng đen giữa 2 khung hình..."
         }
-      ],
-      "sfx": [
-        {
-          "text": "ẦM ĐOÀNG!!",
-          "x": 520, "y": 460,
-          "font_size": 52,
-          "color": [250, 204, 21, 255],
-          "glow_color": [239, 68, 68, 255],
-          "angle": -10
-        }
-      ],
-      "bubbles": [
-        {
-          "text": "Lời thoại nhân vật tiếng Việt!",
-          "x": 230, "y": -120,
-          "rx": 215, "ry": 72,
-          "tail": [360, -280],
-          "dark_mode": false,
-          "font_size": 23
-        }
-      ],
-      "gutter_text": "Câu dẫn chuyển cảnh đầy kịch tính nằm ở khoảng đen giữa 2 khung hình..."
+      ]
     }
   ]
 }
-Lưu ý tọa độ (chiều rộng khung chuẩn W=800, chiều cao khoảng 1200-1400):
-- y dương (ví dụ 110) là tính từ mép trên xuống; y âm (ví dụ -115) là tính từ mép dưới lên.
-- Đảm bảo không đặt bóng thoại che giữa tâm mặt nhân vật (ưu tiên góc trên x=220, y=115 hoặc góc dưới x=280, y=-115).
 """
 
 
-def generate_storyboard_via_ai(prompt: str, num_panels: int, provider: str, api_key: str) -> dict:
-    user_msg = f"Yêu cầu: {prompt}. Hãy thiết kế đúng {num_panels} khung hình (panels) liên kết chặt chẽ từ mở đầu, cao trào đến kết chương."
+def generate_storyboard_via_ai(
+    prompt: str, num_chapters: int = 3, panels_per_chapter: int = 4, provider: str = "gemini", api_key: str = ""
+) -> dict:
+    user_msg = (
+        f"Yêu cầu: {prompt}. "
+        f"Hãy thiết kế TRỌN BỘ truyện hoàn chỉnh từ đầu đến kết thúc gồm {num_chapters} chương "
+        f"(mỗi chương có {panels_per_chapter} khung hình) và bảng thiết kế từ 3-4 nhân vật chính đồng bộ."
+    )
 
     if provider == "gemini" and api_key:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
         payload = {
-            "systemInstruction": {"parts": [{"text": STORYBOARD_SYSTEM_PROMPT}]},
+            "systemInstruction": {"parts": [{"text": FULL_SERIES_SYSTEM_PROMPT}]},
             "contents": [{"parts": [{"text": user_msg}]}],
             "generationConfig": {"responseMimeType": "application/json", "temperature": 0.7},
         }
-        resp = requests.post(url, json=payload, timeout=60)
+        resp = requests.post(url, json=payload, timeout=90)
         if resp.status_code != 200:
-            # Fallback to gemini-2.0-flash if 2.5 not available
             url2 = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
-            resp = requests.post(url2, json=payload, timeout=60)
+            resp = requests.post(url2, json=payload, timeout=90)
         resp.raise_for_status()
-        data = resp.json()
-        raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
+        raw_text = resp.json()["candidates"][0]["content"]["parts"][0]["text"]
         return json.loads(raw_text)
 
     elif provider == "openai" and api_key:
@@ -582,48 +736,82 @@ def generate_storyboard_via_ai(prompt: str, num_panels: int, provider: str, api_
             "model": "gpt-4o-mini",
             "response_format": {"type": "json_object"},
             "messages": [
-                {"role": "system", "content": STORYBOARD_SYSTEM_PROMPT},
+                {"role": "system", "content": FULL_SERIES_SYSTEM_PROMPT},
                 {"role": "user", "content": user_msg},
             ],
         }
-        resp = requests.post(url, headers=headers, json=payload, timeout=60)
+        resp = requests.post(url, headers=headers, json=payload, timeout=90)
         resp.raise_for_status()
         raw_text = resp.json()["choices"][0]["message"]["content"]
         return json.loads(raw_text)
 
     else:
-        # Fallback thông minh qua Pollinations Text API (OpenAI-compatible miễn phí) nếu chưa nhập key
         url = "https://text.pollinations.ai/openai"
         payload = {
             "model": "openai",
             "response_format": {"type": "json_object"},
             "messages": [
-                {"role": "system", "content": STORYBOARD_SYSTEM_PROMPT},
+                {"role": "system", "content": FULL_SERIES_SYSTEM_PROMPT},
                 {"role": "user", "content": user_msg},
             ],
         }
-        resp = requests.post(url, json=payload, timeout=90)
+        resp = requests.post(url, json=payload, timeout=120)
         resp.raise_for_status()
         content = resp.json()["choices"][0]["message"]["content"]
         content = re.sub(r"^```json\s*|\s*```$", "", content.strip())
         return json.loads(content)
 
 
-def generate_panel_image_via_ai(
-    image_prompt: str, character_bible: str, out_path: str, provider: str, api_key: str
+def generate_image_with_consistency(
+    prompt_text: str,
+    out_path: str,
+    provider: str,
+    api_key: str,
+    reference_image_paths: list = None,
+    seed: int = 42,
 ):
-    full_prompt = (
-        f"Vertical Korean Action Manhwa Webtoon panel (Solo Leveling / Redice Studio style, "
-        f"cel-shaded digital art, dramatic lighting, NO TEXT, NO SPEECH BUBBLES, NO WATERMARK). "
-        f"Character reference: {character_bible}. Scene: {image_prompt}"
-    )
-
-    # 1. Thử dùng Gemini Imagen 3 nếu có Gemini API Key
+    """
+    Sinh ảnh nhân vật hoặc khung hình Webtoon.
+    Nếu dùng Gemini Flash Image và có ảnh Character Sheet tham chiếu, truyền trực tiếp ảnh
+    nhân vật vào multimodal prompt để đảm bảo khuôn mặt & giáp trụ đồng bộ 100%.
+    """
+    # 1. Gemini Multimodal Image Generation (với ảnh tham chiếu nhân vật) hoặc Imagen 3
     if provider == "gemini" and api_key:
+        if reference_image_paths:
+            try:
+                parts = []
+                for ref_p in reference_image_paths[:2]:
+                    if os.path.exists(ref_p):
+                        with open(ref_p, "rb") as rf:
+                            b64_ref = base64.b64encode(rf.read()).decode("utf-8")
+                        parts.append({"inlineData": {"mimeType": "image/jpeg", "data": b64_ref}})
+                parts.append(
+                    {
+                        "text": (
+                            "Keep the exact character face, hair, and outfit design from the reference image(s). "
+                            + prompt_text
+                        )
+                    }
+                )
+                url_mm = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key={api_key}"
+                payload_mm = {
+                    "contents": [{"parts": parts}],
+                    "generationConfig": {"responseModalities": ["TEXT", "IMAGE"]},
+                }
+                r_mm = requests.post(url_mm, json=payload_mm, timeout=90)
+                if r_mm.status_code == 200:
+                    for part in r_mm.json()["candidates"][0]["content"]["parts"]:
+                        if "inlineData" in part:
+                            with open(out_path, "wb") as f:
+                                f.write(base64.b64decode(part["inlineData"]["data"]))
+                            return True
+            except Exception as e:
+                print(f"[Warn] Gemini Multimodal Reference fallback: {e}")
+
         try:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key={api_key}"
             payload = {
-                "instances": [{"prompt": full_prompt}],
+                "instances": [{"prompt": prompt_text}],
                 "parameters": {"sampleCount": 1, "aspectRatio": "9:16"},
             }
             r = requests.post(url, json=payload, timeout=90)
@@ -635,14 +823,14 @@ def generate_panel_image_via_ai(
         except Exception as e:
             print(f"[Warn] Gemini Imagen fallback: {e}")
 
-    # 2. Thử dùng OpenAI DALL-E 3 nếu có OpenAI API Key
+    # 2. OpenAI DALL-E 3
     if provider == "openai" and api_key:
         try:
             url = "https://api.openai.com/v1/images/generations"
             headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
             payload = {
                 "model": "dall-e-3",
-                "prompt": full_prompt,
+                "prompt": prompt_text,
                 "size": "1024x1792",
                 "response_format": "b64_json",
                 "n": 1,
@@ -656,9 +844,8 @@ def generate_panel_image_via_ai(
         except Exception as e:
             print(f"[Warn] OpenAI DALL-E 3 fallback: {e}")
 
-    # 3. Fallback tự động qua Pollinations Flux Image API (miễn phí, hỗ trợ ảnh dọc 800x1344)
-    encoded = urllib.parse.quote(full_prompt)
-    seed = int(time.time() * 1000) % 100000
+    # 3. Fallback qua Pollinations Flux với cùng style seed cố định
+    encoded = urllib.parse.quote(prompt_text)
     flux_url = f"https://image.pollinations.ai/prompt/{encoded}?width=800&height=1344&seed={seed}&nologo=true&model=flux"
     r = requests.get(flux_url, timeout=90)
     r.raise_for_status()
@@ -668,10 +855,26 @@ def generate_panel_image_via_ai(
 
 
 def create_full_webtoon_from_prompt(
-    prompt: str, num_panels: int = 4, provider: str = "gemini", api_key: str = ""
+    prompt: str,
+    num_chapters: int = 3,
+    panels_per_chapter: int = 4,
+    provider: str = "gemini",
+    api_key: str = "",
 ) -> dict:
-    """Hàm End-to-End: Từ 1 câu yêu cầu -> Sinh Storyboard -> Vẽ toàn bộ ảnh -> Typeset & Đóng gói ZIP."""
-    sb = generate_storyboard_via_ai(prompt, num_panels, provider, api_key)
+    """
+    Quy trình End-to-End cho Toàn Bộ Bộ Truyện:
+    1. Gọi LLM sinh Storyboard nhiều chương + Character Visual DNA.
+    2. Vẽ toàn bộ Character Reference Sheets trước.
+    3. Vẽ từng khung hình của từng chương (nhúng Visual DNA + ảnh Character Sheet tham chiếu).
+    4. Tự động Typeset tiếng Việt & đóng gói trọn bộ .ZIP.
+    """
+    sb = generate_storyboard_via_ai(
+        prompt=prompt,
+        num_chapters=num_chapters,
+        panels_per_chapter=panels_per_chapter,
+        provider=provider,
+        api_key=api_key,
+    )
     project_id = slugify(sb.get("title", prompt))
     proj_dir = os.path.join(PROJECTS_DIR, project_id)
     os.makedirs(proj_dir, exist_ok=True)
@@ -680,15 +883,59 @@ def create_full_webtoon_from_prompt(
     with open(sb_path, "w", encoding="utf-8") as f:
         json.dump(sb, f, ensure_ascii=False, indent=2)
 
-    char_bible = sb.get("character_bible", "")
-    for idx, p_cfg in enumerate(sb.get("panels", []), start=1):
-        raw_path = os.path.join(proj_dir, f"panel_{idx}_raw.jpg")
-        generate_panel_image_via_ai(
-            p_cfg.get("image_prompt", ""),
-            char_bible,
-            raw_path,
-            provider,
-            api_key,
-        )
+    # Bước 1: Vẽ Bảng Thiết Kế Nhân Vật Đồng Bộ (Character Reference Sheets)
+    char_map = {}
+    char_ref_paths = {}
+    base_seed = int(time.time()) % 10000
 
+    for idx, c_cfg in enumerate(sb.get("characters", []), start=1):
+        cid = c_cfg.get("id", f"char_{idx}")
+        visual_dna = c_cfg.get("visual_dna", "")
+        char_map[cid] = visual_dna
+        raw_char_path = os.path.join(proj_dir, f"char_{cid}_raw.jpg")
+        sheet_prompt = (
+            f"Korean Fantasy Manhwa Character Reference Sheet (Solo Leveling / Redice Studio cel-shaded style, "
+            f"full-body standing pose on the left and close-up facial portrait on the right, NO TEXT, NO LABELS). "
+            f"Character Visual DNA: {visual_dna}. {c_cfg.get('sheet_prompt', '')}"
+        )
+        generate_image_with_consistency(
+            prompt_text=sheet_prompt,
+            out_path=raw_char_path,
+            provider=provider,
+            api_key=api_key,
+            seed=base_seed + idx,
+        )
+        char_ref_paths[cid] = raw_char_path
+
+    # Bước 2: Vẽ Toàn Bộ Khung Hình Của Tất Cả Các Chương
+    chapters = normalize_storyboard_chapters(sb)
+    for ch in chapters:
+        ch_idx = int(ch.get("chapter_index", 1))
+        for p_idx, p_cfg in enumerate(ch.get("panels", []), start=1):
+            present_ids = p_cfg.get("characters_present", [])
+            dna_list = [char_map[cid] for cid in present_ids if cid in char_map]
+            if not dna_list and char_map:
+                dna_list = list(char_map.values())[:2]
+            dna_context = " | ".join(dna_list)
+
+            ref_imgs = [char_ref_paths[cid] for cid in present_ids if cid in char_ref_paths]
+
+            full_panel_prompt = (
+                f"Vertical Korean Action Manhwa Webtoon panel (Solo Leveling / Redice Studio style, "
+                f"sharp line art, cel-shaded digital illustration, dramatic glowing lighting, "
+                f"NO TEXT, NO SPEECH BUBBLES, NO WATERMARK). "
+                f"STRICT CHARACTER VISUAL CONSISTENCY: {dna_context}. "
+                f"Scene description: {p_cfg.get('image_prompt', '')}"
+            )
+            raw_panel_path = os.path.join(proj_dir, f"ch{ch_idx}_panel_{p_idx}_raw.jpg")
+            generate_image_with_consistency(
+                prompt_text=full_panel_prompt,
+                out_path=raw_panel_path,
+                provider=provider,
+                api_key=api_key,
+                reference_image_paths=ref_imgs,
+                seed=base_seed + ch_idx * 100 + p_idx,
+            )
+
+    # Bước 3: Hậu kỳ Typeset toàn bộ các chương & đóng gói .ZIP
     return render_project(project_id)
