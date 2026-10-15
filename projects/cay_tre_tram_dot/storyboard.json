@@ -1,0 +1,955 @@
+{
+  "title": "CÂY TRE TRĂM ĐỐT",
+  "subtitle": "TRỌN BỘ WEBTOON HÀNH ĐỘNG KỲ ẢO HOÀN CHỈNH",
+  "credits": "Nguyên tác: Truyện cổ tích Việt Nam • AI Webtoon Studio",
+  "ai_pacing_note": "Bộ truyện được chia thành 4 chương với tổng cộng 20 khung hình nhằm tái hiện trọn vẹn hành trình từ chàng Khoai hiền lành chịu khó, bẫy lừa của phú ông ác độc, sự can thiệp kỳ diệu của Bụt cho đến màn phản công ngoạn mục bằng phép thuật 'Khắc Nhập Khắc Xuất'.",
+  "characters": [
+    {
+      "id": "khoai",
+      "name": "Anh Khoai",
+      "role": "Nam chính • Nông dân hiền lành, kiên cường",
+      "visual_dna": "20-year-old Vietnamese peasant hero, determined sharp facial features, tanned skin, messy dark brown hair tied with a simple cloth headband, intense amber eyes, wearing rugged brown hemp tunic with arm wraps and sturdy leather boots, carrying a heavy steel woodcutter axe.",
+      "sheet_prompt": "Korean Fantasy Manhwa Character Reference Sheet (full-body pose on left + close-up portrait on right), dark mystical forest background with magical particles, NO TEXT."
+    },
+    {
+      "id": "phu_ong",
+      "name": "Phú Ông",
+      "role": "Phản diện chính • Chủ đất tham lam, mưu mô",
+      "visual_dna": "50-year-old wealthy corrupt landowner, arrogant cunning expression, slicked-back graying hair with a gold scholar crown, sly narrow eyes with heavy bags, wearing luxurious red silk brocade robes embroidered with golden coins, holding a carved jade pipe.",
+      "sheet_prompt": "Korean Fantasy Manhwa Character Reference Sheet (full-body pose on left + close-up portrait on right), opulent mansion interior background, NO TEXT."
+    },
+    {
+      "id": "but",
+      "name": "Bụt (Thần Nhân)",
+      "role": "Hỗ trợ • Thần linh thông thái",
+      "visual_dna": "Ancient benevolent deity with youthful ethereal glow, long flowing silver hair and beard, glowing divine turquoise eyes, wearing immaculate flowing white robes edged with celestial blue light, surrounded by floating lotus petals and soft holy aura.",
+      "sheet_prompt": "Korean Fantasy Manhwa Character Reference Sheet (full-body pose on left + close-up portrait on right), celestial cloud background with glowing aura, NO TEXT."
+    },
+    {
+      "id": "con_gai",
+      "name": "Út Nhỏ (Con gái Phú Ông)",
+      "role": "Nữ chính • Hiền hậu, sắc sảo",
+      "visual_dna": "18-year-old traditional Vietnamese maiden, graceful facial features, long straight jet-black hair cascading down her back, gentle soulful dark eyes, wearing an elegant pastel pink and white traditional ao dai with subtle floral embroidery.",
+      "sheet_prompt": "Korean Fantasy Manhwa Character Reference Sheet (full-body pose on left + close-up portrait on right), serene garden background with spring blossoms, NO TEXT."
+    }
+  ],
+  "chapters": [
+    {
+      "chapter_index": 1,
+      "chapter_title": "CHƯƠNG 1: LỜI HỨA DƯỚI TRĂNG",
+      "footer_title": "— ĐÓN ĐỌC CHƯƠNG 2: BẪY GIA CẢM —",
+      "panels": [
+        {
+          "panel_index": 1,
+          "scene_title": "Khoai làm việc cực nhọc ngoài đồng",
+          "characters_present": [
+            "khoai"
+          ],
+          "image_prompt": "Wide angle shot of a young peasant working fiercely in a vast golden rice field under a fiery sunset, sharp manhwa style, dramatic lighting reflecting off sweat and steel axe, dark cinematic tones.",
+          "narrations": [
+            {
+              "text": "Năm tháng trôi qua, anh Khoai làm lụng vất vả ngoài đồng sâu cho nhà phú ông với hy vọng một ngày được đền đáp.",
+              "x": 400,
+              "y": 90,
+              "w": 660,
+              "h": 95,
+              "border_color": [
+                59,
+                130,
+                246,
+                235
+              ],
+              "text_color": [
+                245,
+                245,
+                255,
+                255
+              ],
+              "font_size": 20
+            }
+          ],
+          "sfx": [
+            {
+              "text": "XOẢNG!!",
+              "x": 500,
+              "y": 450,
+              "font_size": 52,
+              "color": [
+                250,
+                204,
+                21,
+                255
+              ],
+              "glow_color": [
+                239,
+                68,
+                68,
+                255
+              ],
+              "angle": -5
+            }
+          ],
+          "bubbles": [],
+          "gutter_text": "Ánh hoàng hôn vụt tắt, nhường chỗ cho bóng tối u ám bao trùm dinh thự phú ông giàu có..."
+        },
+        {
+          "panel_index": 2,
+          "scene_title": "Phú ông đưa ra lời hứa giả dối",
+          "characters_present": [
+            "phu_ong",
+            "khoai"
+          ],
+          "image_prompt": "Medium shot inside a luxurious mansion hall, greedy landowner smirking coldly while pointing at hardworking peasant youth, dark dramatic shadows, high contrast manhwa art.",
+          "narrations": [
+            {
+              "text": "Lão phú ông nham hiểm đã đưa ra một giao kèo bất khả thi để nuốt lời hứa gả con gái.",
+              "x": 400,
+              "y": 90,
+              "w": 660,
+              "h": 95,
+              "border_color": [
+                239,
+                68,
+                68,
+                235
+              ],
+              "text_color": [
+                245,
+                245,
+                255,
+                255
+              ],
+              "font_size": 20
+            }
+          ],
+          "sfx": [],
+          "bubbles": [
+            {
+              "text": "Hãy mang về cho ta một cây tre trăm đốt làm sính lễ, ta sẽ gả con gái cho ngươi!",
+              "x": 300,
+              "y": -100,
+              "rx": 240,
+              "ry": 75,
+              "tail": [
+                400,
+                -250
+              ],
+              "dark_mode": true,
+              "font_size": 21
+            }
+          ],
+          "gutter_text": "Từ ánh mắt mưu mô của kẻ giàu có, cảnh vật chuyển dịch vào sâu trong khu rừng già tĩnh mịch..."
+        },
+        {
+          "panel_index": 3,
+          "scene_title": "Khoai tiến vào rừng sâu",
+          "characters_present": [
+            "khoai"
+          ],
+          "image_prompt": "Low angle shot of peasant hero walking into a dense, ominous mystical bamboo forest, glowing green aura around him, sharp cel-shading, solo leveling webtoon aesthetic.",
+          "narrations": [
+            {
+              "text": "Biết rõ đó là cái bẫy, anh Khoai vẫn kiên định bước vào rừng sâu để tìm kiếm hy vọng.",
+              "x": 400,
+              "y": 90,
+              "w": 660,
+              "h": 95,
+              "border_color": [
+                34,
+                197,
+                94,
+                235
+              ],
+              "text_color": [
+                245,
+                245,
+                255,
+                255
+              ],
+              "font_size": 20
+            }
+          ],
+          "sfx": [
+            {
+              "text": "VÚT...",
+              "x": 500,
+              "y": 480,
+              "font_size": 48,
+              "color": [
+                34,
+                197,
+                94,
+                255
+              ],
+              "glow_color": [
+                16,
+                185,
+                129,
+                255
+              ],
+              "angle": 0
+            }
+          ],
+          "bubbles": [],
+          "gutter_text": "Bỗng nhiên, giữa không gian tĩnh lặng, một luồng sáng kỳ ảo từ trên cao rọi xuống..."
+        },
+        {
+          "panel_index": 4,
+          "scene_title": "Bụt xuất hiện cứu giúp",
+          "characters_present": [
+            "khoai",
+            "but"
+          ],
+          "image_prompt": "Dramatic close-up shot of an ethereal deity with glowing turquoise eyes appearing before the astonished peasant, floating lotus petals, divine magical lighting.",
+          "narrations": [
+            {
+              "text": "Cảm động trước sự chân thành và kiên nhẫn, Bụt hiển linh ban phép màu cứu giúp chàng trai.",
+              "x": 400,
+              "y": 90,
+              "w": 660,
+              "h": 95,
+              "border_color": [
+                250,
+                204,
+                21,
+                235
+              ],
+              "text_color": [
+                245,
+                245,
+                255,
+                255
+              ],
+              "font_size": 20
+            }
+          ],
+          "sfx": [
+            {
+              "text": "KENGG!!",
+              "x": 500,
+              "y": 460,
+              "font_size": 52,
+              "color": [
+                250,
+                204,
+                21,
+                255
+              ],
+              "glow_color": [
+                59,
+                130,
+                246,
+                255
+              ],
+              "angle": 5
+            }
+          ],
+          "bubbles": [
+            {
+              "text": "Đừng buồn, hỡi con. Hãy chặt bốn đốt tre rời đem lại đây!",
+              "x": 300,
+              "y": -110,
+              "rx": 220,
+              "ry": 72,
+              "tail": [
+                350,
+                -250
+              ],
+              "dark_mode": false,
+              "font_size": 21
+            }
+          ],
+          "gutter_text": ""
+        }
+      ]
+    },
+    {
+      "chapter_index": 2,
+      "chapter_title": "CHƯƠNG 2: THẦN CHÚ KỲ DIỆU",
+      "footer_title": "— ĐÓN ĐỌC CHƯƠNG 3: TIỆC CƯỚI BIẾN CỐ —",
+      "panels": [
+        {
+          "panel_index": 1,
+          "scene_title": "Bốn khúc tre rời",
+          "characters_present": [
+            "khoai"
+          ],
+          "image_prompt": "Close-up shot of four segmented bamboo pieces glowing with mystical energy on the dark forest floor, intense magical aura, sharp digital manhwa lines.",
+          "narrations": [
+            {
+              "text": "Theo lời Bụt dặn, anh Khoai đặt bốn khúc tre rời xếp chồng lên nhau giữa bãi cỏ linh thiêng.",
+              "x": 400,
+              "y": 90,
+              "w": 660,
+              "h": 95,
+              "border_color": [
+                34,
+                197,
+                94,
+                235
+              ],
+              "text_color": [
+                245,
+                245,
+                255,
+                255
+              ],
+              "font_size": 20
+            }
+          ],
+          "sfx": [
+            {
+              "text": "RỤC RỊCH...",
+              "x": 500,
+              "y": 470,
+              "font_size": 45,
+              "color": [
+                34,
+                197,
+                94,
+                255
+              ],
+              "glow_color": [
+                16,
+                185,
+                129,
+                255
+              ],
+              "angle": 0
+            }
+          ],
+          "bubbles": [],
+          "gutter_text": "Từ đôi môi vị thần vang lên câu thần chú vang động cả núi rừng..."
+        },
+        {
+          "panel_index": 2,
+          "scene_title": "Bụt truyền dạy thần chú Khắc Nhập",
+          "characters_present": [
+            "but",
+            "khoai"
+          ],
+          "image_prompt": "Medium action shot of the deity pointing finger forward, emitting powerful blue magic shockwaves towards the bamboo, epic fantasy Webtoon style.",
+          "narrations": [
+            {
+              "text": "Câu thần chú cổ xưa vang lên, kết nối hàng trăm đốt tre rời thành một thân cây duy nhất.",
+              "x": 400,
+              "y": 90,
+              "w": 660,
+              "h": 95,
+              "border_color": [
+                59,
+                130,
+                246,
+                235
+              ],
+              "text_color": [
+                245,
+                245,
+                255,
+                255
+              ],
+              "font_size": 20
+            }
+          ],
+          "sfx": [
+            {
+              "text": "KHẮC NHẬP!!",
+              "x": 500,
+              "y": 450,
+              "font_size": 55,
+              "color": [
+                59,
+                130,
+                246,
+                255
+              ],
+              "glow_color": [
+                250,
+                204,
+                21,
+                255
+              ],
+              "angle": -8
+            }
+          ],
+          "bubbles": [
+            {
+              "text": "Hãy nhớ kỹ khẩu quyết: Khắc nhập một trăm đốt tre!",
+              "x": 300,
+              "y": -110,
+              "rx": 210,
+              "ry": 70,
+              "tail": [
+                340,
+                -250
+              ],
+              "dark_mode": false,
+              "font_size": 21
+            }
+          ],
+          "gutter_text": "Ánh sáng chói lọi bùng nổ, bầu trời rung chuyển trước sức mạnh thần thánh..."
+        },
+        {
+          "panel_index": 3,
+          "scene_title": "Cây tre trăm đốt vươn cao",
+          "characters_present": [
+            "khoai"
+          ],
+          "image_prompt": "Dramatic low angle shot of a massive, glowing hundred-segment bamboo tree piercing straight up through the thick clouds, majestic and awe-inspiring.",
+          "narrations": [
+            {
+              "text": "Chỉ trong chớp mắt, một cây tre trăm đốt cao vút uy nghi hiện ra trước mắt chàng trai.",
+              "x": 400,
+              "y": 90,
+              "w": 660,
+              "h": 95,
+              "border_color": [
+                250,
+                204,
+                21,
+                235
+              ],
+              "text_color": [
+                245,
+                245,
+                255,
+                255
+              ],
+              "font_size": 20
+            }
+          ],
+          "sfx": [
+            {
+              "text": "VÚT VÚT!!",
+              "x": 500,
+              "y": 480,
+              "font_size": 50,
+              "color": [
+                250,
+                204,
+                21,
+                255
+              ],
+              "glow_color": [
+                239,
+                68,
+                68,
+                255
+              ],
+              "angle": 10
+            }
+          ],
+          "bubbles": [],
+          "gutter_text": "Khoai nắm chặt thân tre thần, quay trở về dinh thự phú ông với nụ cười chiến thắng..."
+        },
+        {
+          "panel_index": 4,
+          "scene_title": "Khoai mang tre về dinh thự",
+          "characters_present": [
+            "khoai"
+          ],
+          "image_prompt": "Medium shot of peasant hero effortlessly lifting the giant magical bamboo on his shoulder, walking with absolute confidence toward a massive estate gate.",
+          "narrations": [
+            {
+              "text": "Mang theo cây tre trăm đốt thần kỳ, anh Khoai hiên ngang bước đến trước cổng lớn của nhà phú ông.",
+              "x": 400,
+              "y": 90,
+              "w": 660,
+              "h": 95,
+              "border_color": [
+                34,
+                197,
+                94,
+                235
+              ],
+              "text_color": [
+                245,
+                245,
+                255,
+                255
+              ],
+              "font_size": 20
+            }
+          ],
+          "sfx": [],
+          "bubbles": [],
+          "gutter_text": ""
+        }
+      ]
+    },
+    {
+      "chapter_index": 3,
+      "chapter_title": "CHƯƠNG 3: CÁI BẪY HOÀNG KIM",
+      "footer_title": "— ĐÓN ĐỌC CHƯƠNG 4: ĐẠI KẾT CỤC —",
+      "panels": [
+        {
+          "panel_index": 1,
+          "scene_title": "Phú ông kinh hoàng",
+          "characters_present": [
+            "phu_ong",
+            "khoai"
+          ],
+          "image_prompt": "Close-up shot of greedy landowner wide-eyed in absolute shock and terror, dropping his jade pipe as he sees the impossible hundred-segment bamboo, dramatic shadows.",
+          "narrations": [
+            {
+              "text": "Lão phú ông trố mắt kinh hãi khi nhìn thấy cây tre trăm đốt sừng sững xuất hiện trước mặt.",
+              "x": 400,
+              "y": 90,
+              "w": 660,
+              "h": 95,
+              "border_color": [
+                239,
+                68,
+                68,
+                235
+              ],
+              "text_color": [
+                245,
+                245,
+                255,
+                255
+              ],
+              "font_size": 20
+            }
+          ],
+          "sfx": [
+            {
+              "text": "XOẢNG!!",
+              "x": 500,
+              "y": 450,
+              "font_size": 52,
+              "color": [
+                239,
+                68,
+                68,
+                255
+              ],
+              "glow_color": [
+                250,
+                204,
+                21,
+                255
+              ],
+              "angle": -12
+            }
+          ],
+          "bubbles": [
+            {
+              "text": "Làm sao... làm sao ngươi có thể mang cây tre này về được?!",
+              "x": 300,
+              "y": -100,
+              "rx": 220,
+              "ry": 72,
+              "tail": [
+                380,
+                -250
+              ],
+              "dark_mode": true,
+              "font_size": 21
+            }
+          ],
+          "gutter_text": "Sự hoảng loạn nhanh chóng biến thành lòng tham độc ác. Lão ta lập tức bày mưu tính kế mới..."
+        },
+        {
+          "panel_index": 2,
+          "scene_title": "Mưu kế tàn độc của phú ông",
+          "characters_present": [
+            "phu_ong"
+          ],
+          "image_prompt": "Medium low-angle shot of corrupt landowner grinning wickedly with gold coins gleaming in the background, sharp manhwa villain aesthetic.",
+          "narrations": [
+            {
+              "text": "Nuốt lời một lần chưa đủ, lão ta lại giở trò xảo trá để lừa gạt chàng trai khờ khạo thêm lần nữa.",
+              "x": 400,
+              "y": 90,
+              "w": 660,
+              "h": 95,
+              "border_color": [
+                239,
+                68,
+                68,
+                235
+              ],
+              "text_color": [
+                245,
+                245,
+                255,
+                255
+              ],
+              "font_size": 20
+            }
+          ],
+          "sfx": [],
+          "bubbles": [
+            {
+              "text": "Tre dài thế này làm sao khiêng vào nhà? Ngươi hãy vào ôm chặt lấy thân tre xem nào!",
+              "x": 300,
+              "y": -100,
+              "rx": 230,
+              "ry": 75,
+              "tail": [
+                370,
+                -250
+              ],
+              "dark_mode": true,
+              "font_size": 21
+            }
+          ],
+          "gutter_text": "Anh Khoai bước đến ôm trọn lấy thân tre, không hề hay biết cái bẫy chết người đang giăng sẵn..."
+        },
+        {
+          "panel_index": 3,
+          "scene_title": "Khoai ôm lấy cây tre",
+          "characters_present": [
+            "khoai"
+          ],
+          "image_prompt": "Medium action shot of peasant hero wrapping his arms tightly around the massive mystical bamboo trunk inside the courtyard, glowing green magical runes on the bark.",
+          "narrations": [
+            {
+              "text": "Tin tưởng vào lời nói của kẻ gian manh, anh Khoai tiến lại ôm chặt lấy thân cây khổng lồ.",
+              "x": 400,
+              "y": 90,
+              "w": 660,
+              "h": 95,
+              "border_color": [
+                34,
+                197,
+                94,
+                235
+              ],
+              "text_color": [
+                245,
+                245,
+                255,
+                255
+              ],
+              "font_size": 20
+            }
+          ],
+          "sfx": [
+            {
+              "text": "SIết CHẶT...",
+              "x": 500,
+              "y": 480,
+              "font_size": 45,
+              "color": [
+                34,
+                197,
+                94,
+                255
+              ],
+              "glow_color": [
+                16,
+                185,
+                129,
+                255
+              ],
+              "angle": 0
+            }
+          ],
+          "bubbles": [],
+          "gutter_text": "Nụ cười đắc ý nở trên môi phú ông khi hắn tưởng rằng mình đã chiến thắng tuyệt đối..."
+        },
+        {
+          "panel_index": 4,
+          "scene_title": "Phú ông cười đắc ý",
+          "characters_present": [
+            "phu_ong"
+          ],
+          "image_prompt": "Close-up portrait of greedy landowner laughing maniacally with an evil expression, dark cinematic lighting, high contrast Webtoon panel.",
+          "narrations": [
+            {
+              "text": "Hắn cười lớn mãn nguyện, đinh ninh rằng chàng trai nghèo sẽ mãi mãi dính chặt vào gốc tre.",
+              "x": 400,
+              "y": 90,
+              "w": 660,
+              "h": 95,
+              "border_color": [
+                239,
+                68,
+                68,
+                235
+              ],
+              "text_color": [
+                245,
+                245,
+                255,
+                255
+              ],
+              "font_size": 20
+            }
+          ],
+          "sfx": [
+            {
+              "text": "HA HA HA!!",
+              "x": 500,
+              "y": 450,
+              "font_size": 52,
+              "color": [
+                239,
+                68,
+                68,
+                255
+              ],
+              "glow_color": [
+                250,
+                204,
+                21,
+                255
+              ],
+              "angle": 5
+            }
+          ],
+          "bubbles": [],
+          "gutter_text": ""
+        }
+      ]
+    },
+    {
+      "chapter_index": 4,
+      "chapter_title": "CHƯƠNG 4: SỰ TRỪNG PHẠT XỨNG ĐÁNG",
+      "footer_title": "— HẾT TRUYỆN —",
+      "panels": [
+        {
+          "panel_index": 1,
+          "scene_title": "Khoai đọc thần chú Khắc Xuất",
+          "characters_present": [
+            "khoai"
+          ],
+          "image_prompt": "Extreme close-up of peasant hero's glowing amber eyes with intense resolute expression, magic runes swirling around his face, epic manhwa style.",
+          "narrations": [
+            {
+              "text": "Nhưng anh Khoai đã kịp nhớ lại câu thần chú thứ hai mà Bụt đã truyền dạy trước đó.",
+              "x": 400,
+              "y": 90,
+              "w": 660,
+              "h": 95,
+              "border_color": [
+                59,
+                130,
+                246,
+                235
+              ],
+              "text_color": [
+                245,
+                245,
+                255,
+                255
+              ],
+              "font_size": 20
+            }
+          ],
+          "sfx": [
+            {
+              "text": "KHẮC XUẤT!!",
+              "x": 500,
+              "y": 450,
+              "font_size": 58,
+              "color": [
+                250,
+                204,
+                21,
+                255
+              ],
+              "glow_color": [
+                239,
+                68,
+                68,
+                255
+              ],
+              "angle": -10
+            }
+          ],
+          "bubbles": [
+            {
+              "text": "Khắc xuất! Khắc xuất!",
+              "x": 300,
+              "y": -110,
+              "rx": 190,
+              "ry": 65,
+              "tail": [
+                340,
+                -250
+              ],
+              "dark_mode": false,
+              "font_size": 22
+            }
+          ],
+          "gutter_text": "Ngay lập tức, cây tre trăm đốt tách rời thành hàng loạt khúc tre nhỏ văng tứ tung..."
+        },
+        {
+          "panel_index": 2,
+          "scene_title": "Phú ông dính chặt vào tre",
+          "characters_present": [
+            "phu_ong",
+            "khoai"
+          ],
+          "image_prompt": "Dynamic action shot of greedy landowner getting violently sucked forward and magically glued onto the bamboo trunk, expression turning from smug to absolute terror.",
+          "narrations": [
+            {
+              "text": "Sức mạnh thần kỳ hút chặt lấy kẻ tham lam vào thân tre, khiến hắn không tài nào dứt ra được.",
+              "x": 400,
+              "y": 90,
+              "w": 660,
+              "h": 95,
+              "border_color": [
+                239,
+                68,
+                68,
+                235
+              ],
+              "text_color": [
+                245,
+                245,
+                255,
+                255
+              ],
+              "font_size": 20
+            }
+          ],
+          "sfx": [
+            {
+              "text": "DÍNH CHẶT!!",
+              "x": 500,
+              "y": 460,
+              "font_size": 52,
+              "color": [
+                239,
+                68,
+                68,
+                255
+              ],
+              "glow_color": [
+                59,
+                130,
+                246,
+                255
+              ],
+              "angle": 10
+            }
+          ],
+          "bubbles": [
+            {
+              "text": "Á cứu tôi với! Tay chân tôi bị dính chặt vào đây rồi!",
+              "x": 300,
+              "y": -100,
+              "rx": 230,
+              "ry": 75,
+              "tail": [
+                380,
+                -250
+              ],
+              "dark_mode": true,
+              "font_size": 21
+            }
+          ],
+          "gutter_text": "Tiếng kêu cứu thảm thiết vang lên khắp dinh thự, thu hút toàn bộ gia nhân và tiểu thư chạy đến..."
+        },
+        {
+          "panel_index": 3,
+          "scene_title": "Út Nhỏ xuất hiện",
+          "characters_present": [
+            "con_gai",
+            "khoai",
+            "phu_ong"
+          ],
+          "image_prompt": "Medium shot of a graceful young maiden with long flowing black hair looking at the scene with astonished eyes, standing next to the victorious hero.",
+          "narrations": [
+            {
+              "text": "Con gái phú ông chứng kiến toàn bộ sự việc, nàng bước đến trao nụ cười cảm phục cho người anh hùng.",
+              "x": 400,
+              "y": 90,
+              "w": 660,
+              "h": 95,
+              "border_color": [
+                250,
+                204,
+                21,
+                235
+              ],
+              "text_color": [
+                245,
+                245,
+                255,
+                255
+              ],
+              "font_size": 20
+            }
+          ],
+          "sfx": [],
+          "bubbles": [
+            {
+              "text": "Thiếp nguyện gả cho chàng, người anh hùng chân chính!",
+              "x": 300,
+              "y": -100,
+              "rx": 220,
+              "ry": 72,
+              "tail": [
+                360,
+                -250
+              ],
+              "dark_mode": false,
+              "font_size": 21
+            }
+          ],
+          "gutter_text": "Lão phú ông bấy giờ mới hối hận khôn cùng, van xin tha mạng và giữ đúng lời hứa xưa..."
+        },
+        {
+          "panel_index": 4,
+          "scene_title": "Đại kết cục viên mãn",
+          "characters_present": [
+            "khoai",
+            "con_gai"
+          ],
+          "image_prompt": "Wide angle establishing shot of peasant hero and the noble maiden standing triumphantly together under a golden sunrise, beautiful cinematic webtoon final panel.",
+          "narrations": [
+            {
+              "text": "Cuối cùng, kẻ tham lam phải cúi đầu giữ lời hứa. Anh Khoai và người con gái hiền thảo sống hạnh phúc bên nhau mãi mãi.",
+              "x": 400,
+              "y": 90,
+              "w": 660,
+              "h": 95,
+              "border_color": [
+                250,
+                204,
+                21,
+                235
+              ],
+              "text_color": [
+                245,
+                245,
+                255,
+                255
+              ],
+              "font_size": 20
+            }
+          ],
+          "sfx": [
+            {
+              "text": "HOÀN TẤT!!",
+              "x": 500,
+              "y": 480,
+              "font_size": 52,
+              "color": [
+                250,
+                204,
+                21,
+                255
+              ],
+              "glow_color": [
+                34,
+                197,
+                94,
+                255
+              ],
+              "angle": 0
+            }
+          ],
+          "bubbles": [],
+          "gutter_text": ""
+        }
+      ]
+    }
+  ],
+  "model_used": "gemini-3.5-flash-lite"
+}
