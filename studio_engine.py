@@ -886,10 +886,10 @@ def generate_storyboard_via_ai(
     if not os.path.exists(agy_bin):
         agy_bin = "agy"
 
-    # 0. Chế độ Mặc định: Gọi trực tiếp Antigravity Agent CLI (agy) đang đăng nhập sẵn
+    # 0. Chế độ Mặc định: Gọi trực tiếp Antigravity Agent CLI (agy) đang đăng nhập sẵn (Tài khoản Ultra)
     if provider.startswith("agy"):
         import subprocess
-        agy_model = provider.split(":", 1)[1] if ":" in provider else "gemini-3.8-flash-medium"
+        agy_model = provider.split(":", 1)[1] if ":" in provider else "gemini-4-argon-high"
         full_prompt = (
             "Do NOT call any tools. Output ONLY raw valid JSON (no markdown code fences, no explanation).\n\n"
             + FULL_SERIES_SYSTEM_PROMPT
@@ -901,7 +901,7 @@ def generate_storyboard_via_ai(
                 [agy_bin, "--dangerously-skip-permissions", "--model", agy_model, "-p", full_prompt],
                 capture_output=True,
                 text=True,
-                timeout=120,
+                timeout=150,
                 cwd=BASE_DIR,
             )
             raw_out = (proc.stdout or "").strip()
@@ -1005,8 +1005,8 @@ _GEMINI_IMAGE_QUOTA_AVAILABLE = False
 
 def generate_image_via_agy_cli(prompt_text: str, out_path: str, retries: int = 4) -> bool:
     """
-    Sử dụng trực tiếp AI Agent `agy` CLI (invoke_subagent TypeName='image-generator')
-    để vẽ ảnh Manhwa 9:16 độ phân giải cao sắc nét.
+    Sử dụng trực tiếp AI Agent `agy` CLI (invoke_subagent TypeName='image-generator', Model='pro')
+    trên tài khoản Google AI Ultra để vẽ ảnh Manhwa 9:16 độ phân giải cao sắc nét.
     Có cơ chế tự động chờ (backoff 14s) khi gặp giới hạn tốc độ mỗi phút (429 RATE_LIMIT_EXCEEDED).
     """
     import shutil
@@ -1017,7 +1017,7 @@ def generate_image_via_agy_cli(prompt_text: str, out_path: str, retries: int = 4
         return False
 
     sub_prompt = (
-        "Use the invoke_subagent tool with TypeName='image-generator' (Role='Webtoon Panel Artist', Model='inherit') "
+        "Use the invoke_subagent tool with TypeName='image-generator' (Role='Webtoon Panel Artist', Model='pro') "
         "to generate this single vertical 9:16 Korean Manhwa illustration (NO TEXT, NO LETTERS, NO SPEECH BUBBLES): "
         f"{prompt_text}\n"
         "Wait for the subagent to finish and reply with ONLY the absolute file path of the saved .jpg image."
@@ -1030,7 +1030,7 @@ def generate_image_via_agy_cli(prompt_text: str, out_path: str, retries: int = 4
                     agy_bin,
                     "--dangerously-skip-permissions",
                     "--model",
-                    "gemini-3.8-flash-low",
+                    "gemini-3.8-flash-high",
                     "-p",
                     sub_prompt,
                 ],
