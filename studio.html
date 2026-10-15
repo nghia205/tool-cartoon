@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Webtoon Studio — Công Cụ Sản Xuất Truyện Tranh Tự Động</title>
+  <style>
+    :root {
+      --bg-main: #070711;
+      --bg-sidebar: #0f1021;
+      --bg-card: #161830;
+      --border: rgba(148, 163, 184, 0.16);
+      --accent-purple: #9333ea;
+      --accent-cyan: #06b6d4;
+      --accent-gold: #facc15;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg-main);
+      color: var(--text-main);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    /* Top Header */
+    .header {
+      height: 58px;
+      background: #0b0c1a;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      flex-shrink: 0;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 17px;
+      letter-spacing: 0.5px;
+      color: #fff;
+    }
+    .logo-badge {
+      background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+    .toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .btn {
+      border: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.18s;
+      text-decoration: none;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #7e22ce, #2563eb);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(126, 34, 206, 0.35);
+    }
+    .btn-primary:hover { filter: brightness(1.12); }
+    .btn-gold {
+      background: linear-gradient(135deg, #eab308, #f97316);
+      color: #09090b;
+      font-weight: 700;
+    }
+    .btn-outline {
+      background: var(--bg-card);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+    }
+    .btn-outline.active {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+      background: rgba(6, 182, 212, 0.12);
+    }
+
+    /* Workspace 3-Column Layout */
+    .workspace {
+      display: grid;
+      grid-template-columns: 360px 1fr 390px;
+      flex: 1;
+      overflow: hidden;
+    }
+    .panel-col {
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .panel-col.right {
+      border-right: none;
+      border-left: 1px solid var(--border);
+    }
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 15px;
+    }
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--accent-cyan);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 5px;
+      margin-top: 10px;
+    }
+    label:first-of-type { margin-top: 0; }
+    input, select, textarea {
+      width: 100%;
+      background: #0b0c18;
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 9px 11px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: inherit;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent-purple);
+    }
+    .preset-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .chip {
+      font-size: 11px;
+      background: rgba(147, 51, 234, 0.16);
+      border: 1px solid rgba(147, 51, 234, 0.35);
+      color: #e9d5ff;
+      padding: 4px 8px;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+    .chip:hover { background: rgba(147, 51, 234, 0.32); }
+
+    .project-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .project-item {
+      padding: 11px 12px;
+      border-radius: 9px;
+      background: #0d0e1c;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .project-item:hover, .project-item.active {
+      border-color: var(--accent-gold);
+      background: rgba(250, 204, 21, 0.08);
+    }
+    .project-item h4 {
+      font-size: 13px;
+      color: var(--accent-gold);
+      margin-bottom: 3px;
+    }
+    .project-item p {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Center Webtoon Preview Canvas */
+    .canvas-area {
+      background: #05050c;
+      overflow-y: auto;
+      padding: 24px 16px 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .webtoon-stage {
+      width: 100%;
+      max-width: 680px;
+      background: #05050c;
+      box-shadow: 0 0 50px rgba(0, 0, 0, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .webtoon-stage img {
+      width: 100%;
+      display: block;
+    }
+    .gutter-box {
+      padding: 48px 24px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: 700;
+      font-style: italic;
+      color: #a5f3fc;
+      line-height: 1.6;
+      text-shadow: 0 0 12px rgba(6, 182, 212, 0.55);
+      background: #05050c;
+    }
+    .stage-banner {
+      padding: 40px 20px 28px;
+      text-align: center;
+      background: radial-gradient(circle at center, rgba(126, 34, 206, 0.25) 0%, #05050c 75%);
+    }
+    .stage-banner h1 {
+      font-size: 26px;
+      color: var(--accent-gold);
+      margin-bottom: 8px;
+    }
+    .stage-banner h2 {
+      font-size: 16px;
+      color: var(--accent-cyan);
+      margin-bottom: 8px;
+    }
+    .stage-banner p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Editor Accordions */
+    .panel-editor-block {
+      background: #0b0c18;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .panel-editor-block h5 {
+      font-size: 13px;
+      color: var(--accent-gold);
+      margin-bottom: 8px;
+    }
+    .status-toast {
+      font-size: 12px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: rgba(6, 182, 212, 0.15);
+      color: #67e8f9;
+      display: none;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="logo">
+      <span class="logo-badge">AI Studio</span>
+      <span>Webtoon Studio — Chuyển Thể Truyện Tranh Thương Mại</span>
+    </div>
+
+    <div class="toolbar-actions">
+      <button class="btn btn-outline active" id="btnModeTypeset" onclick="switchViewMode('typeset')">
+        📖 Đọc Từng Khung (Đã Typeset)
+      </button>
+      <button class="btn btn-outline" id="btnModeStrip" onclick="switchViewMode('strip')">
+        📜 Ảnh Dọc Nguyên Cột
+      </button>
+      <button class="btn btn-outline" id="btnModeRaw" onclick="switchViewMode('raw')">
+        🎨 Ảnh AI Gốc (Raw)
+      </button>
+      <a id="downloadStripBtn" class="btn btn-outline" href="#" download>
+        🖼️ Tải Ảnh Dọc (.JPG)
+      </a>
+      <a id="downloadZipBtn" class="btn btn-gold" href="#" download>
+        📦 Tải Trọn Bộ Ảnh (.ZIP)
+      </a>
+    </div>
+  </header>
+
+  <!-- Main 3-Column Studio -->
+  <div class="workspace">
+
+    <!-- Left Column: API Key + One-Prompt Generator + Project Library -->
+    <aside class="panel-col">
+      <div class="card">
+        <div class="card-title">
+          <span>🔑 1. Cấu Hình AI & API Key</span>
+          <span id="keyStatusBadge" style="font-size:11px;color:#4ade80;">Sẵn sàng</span>
+        </div>
+        <label>Nhà cung cấp AI (LLM + Vẽ Ảnh)</label>
+        <select id="providerSelect">
+          <option value="gemini">Google Gemini API (Gemini Flash + Imagen 3)</option>
+          <option value="openai">OpenAI API (GPT-4o + DALL-E 3)</option>
+          <option value="free">Chế độ Miễn phí (Pollinations Flux AI)</option>
+        </select>
+
+        <label>Nhập API Key của bạn (Tự động lưu vào .env)</label>
+        <input type="password" id="apiKeyInput" placeholder="Dán AIzaSy... hoặc sk-... (Để trống = dùng Free AI)" />
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>⚡ 2. Tạo Bộ Truyện Từ 1 Câu Lệnh</span>
+        </div>
+        <label>Yêu cầu cốt truyện / kịch bản</label>
+        <textarea id="promptInput" rows="4" placeholder="Ví dụ: Tạo bộ truyện Sơn Tinh Thủy Tinh đầy đủ theo kiểu webtoon hành động thần thoại Manhwa Hàn Quốc..."></textarea>
+
+        <div class="preset-chips">
+          <span class="chip" onclick="fillPreset('Tạo bộ truyện Sơn Tinh Thủy Tinh đại chiến thần linh theo phong cách Webtoon Manhwa Hàn Quốc')">Sơn Tinh Thủy Tinh</span>
+          <span class="chip" onclick="fillPreset('Tạo bộ truyện Thánh Gióng cưỡi ngựa sắt phun lửa đại chiến Ân Ma theo kiểu Solo Leveling')">Thánh Gióng Dị Giới</span>
+          <span class="chip" onclick="fillPreset('Tạo bộ truyện Lạc Long Quân diệt Ngư Tinh Cửu Vĩ Hồ cứu bách tính Lạc Việt')">Lạc Long Quân</span>
+          <span class="chip" onclick="fillPreset('Tạo bộ truyện Tấm Cám Huyết Nguyệt: Hoàng hậu Tấm trở về báo thù')">Tấm Cám Dark Fantasy</span>
+        </div>
+
+        <label>Số lượng khung hình (Panels)</label>
+        <select id="numPanelsSelect">
+          <option value="4">4 Khung hình (Tiêu chuẩn)</option>
+          <option value="5" selected>5 Khung hình (Đầy đủ Mở - Cao trào - Kết)</option>
+          <option value="6">6 Khung hình (Dài)</option>
+        </select>
+
+        <button class="btn btn-primary" id="generateBtn" style="width:100%;justify-content:center;margin-top:14px;padding:11px;" onclick="generateNewWebtoon()">
+          🚀 Tạo Bộ Truyện Webtoon Tự Động
+        </button>
+        <div class="status-toast" id="genStatusToast"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>📚 3. Kho Truyện Đã Xuất Bản</span>
+        </div>
+        <div class="project-list" id="projectList"></div>
+      </div>
+    </aside>
+
+    <!-- Center Column: Webtoon Vertical Preview -->
+    <main class="canvas-area">
+      <div class="webtoon-stage" id="webtoonStage"></div>
+    </main>
+
+    <!-- Right Column: Live Typesetting & Dialogue Editor -->
+    <aside class="panel-col right">
+      <div class="card">
+        <div class="card-title">
+          <span>✏️ Họa Sĩ Hậu Kỳ / Sửa Thoại & SFX</span>
+          <button class="btn btn-primary" style="padding:5px 10px;font-size:11px;" onclick="saveAndRenderTypeset()">
+            🎨 Render Lại Ảnh
+          </button>
+        </div>
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">
+          Sửa lời dẫn truyện, bóng thoại nhân vật hoặc chữ tượng thanh (SFX) bên dưới và bấm <b>Render Lại Ảnh</b> để đóng lại chữ vào ảnh ngay lập tức.
+        </p>
+        <div id="storyboardEditor"></div>
+      </div>
+    </aside>
+
+  </div>
+
+  <script>
+    let currentProject = null;
+    let currentViewMode = 'typeset'; // 'typeset' | 'strip' | 'raw'
+
+    function fillPreset(text) {
+      document.getElementById('promptInput').value = text;
+    }
+
+    async function loadProjectList(selectId = null) {
+      const res = await fetch('/api/projects');
+      const data = await res.json();
+      const listEl = document.getElementById('projectList');
+      listEl.innerHTML = '';
+
+      data.projects.forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'project-item' + ((selectId === p.project_id) ? ' active' : '');
+        div.innerHTML = `
+          <h4>${p.title}</h4>
+          <p>${p.subtitle} • ${p.panel_count} khung hình</p>
+        `;
+        div.onclick = () => selectProject(p.project_id);
+        listEl.appendChild(div);
+      });
+
+      if (selectId) {
+        await selectProject(selectId);
+      } else if (data.projects.length > 0) {
+        // Mặc định mở bộ truyện Sơn Tinh Thủy Tinh nếu có
+        const sttt = data.projects.find(p => p.project_id === 'son_tinh_thuy_tinh');
+        await selectProject(sttt ? sttt.project_id : data.projects[0].project_id);
+      }
+    }
+
+    async function selectProject(projectId) {
+      const res = await fetch(`/api/projects/${projectId}`);
+      currentProject = await res.json();
+
+      document.querySelectorAll('.project-item').forEach(el => {
+        el.classList.toggle('active', el.querySelector('h4').innerText === currentProject.title);
+      });
+
+      document.getElementById('downloadZipBtn').href = currentProject.zip_url;
+      document.getElementById('downloadStripBtn').href = currentProject.strip_url;
+
+      renderStage();
+      renderEditor();
+    }
+
+    function switchViewMode(mode) {
+      currentViewMode = mode;
+      document.getElementById('btnModeTypeset').classList.toggle('active', mode === 'typeset');
+      document.getElementById('btnModeStrip').classList.toggle('active', mode === 'strip');
+      document.getElementById('btnModeRaw').classList.toggle('active', mode === 'raw');
+      renderStage();
+    }
+
+    function renderStage() {
+      if (!currentProject) return;
+      const stage = document.getElementById('webtoonStage');
+      const sb = currentProject.storyboard;
+
+      if (currentViewMode === 'strip') {
+        stage.innerHTML = `<img src="${currentProject.strip_url}" alt="Full Webtoon Strip" />`;
+        return;
+      }
+
+      let html = `
+        <div class="stage-banner">
+          <h1>${sb.title || ''}</h1>
+          <h2>${sb.subtitle || ''}</h2>
+          <p>${sb.credits || ''}</p>
+        </div>
+      `;
+
+      currentProject.panels.forEach((p, idx) => {
+        const imgUrl = currentViewMode === 'typeset' ? p.typeset_url : p.raw_url;
+        const pCfg = sb.panels[idx] || {};
+        html += `<img src="${imgUrl}" alt="Panel ${p.index}" />`;
+        if (pCfg.gutter_text && idx < currentProject.panels.length - 1) {
+          html += `<div class="gutter-box">${pCfg.gutter_text.replace(/\n/g, '<br/>')}</div>`;
+        }
+      });
+
+      stage.innerHTML = html;
+    }
+
+    function renderEditor() {
+      if (!currentProject) return;
+      const container = document.getElementById('storyboardEditor');
+      const sb = currentProject.storyboard;
+
+      let html = `
+        <div class="panel-editor-block">
+          <h5>Tiêu đề bộ truyện</h5>
+          <label>Tên truyện</label>
+          <input type="text" id="ed_title" value="${(sb.title || '').replace(/"/g, '&quot;')}" />
+          <label>Tên chương</label>
+          <input type="text" id="ed_subtitle" value="${(sb.subtitle || '').replace(/"/g, '&quot;')}" />
+        </div>
+      `;
+
+      (sb.panels || []).forEach((p, idx) => {
+        const narText = (p.narrations && p.narrations[0]) ? p.narrations[0].text : '';
+        const bubText = (p.bubbles && p.bubbles[0]) ? p.bubbles[0].text : '';
+        const sfxText = (p.sfx && p.sfx[0]) ? p.sfx[0].text : '';
+        html += `
+          <div class="panel-editor-block">
+            <h5>Khung #${idx + 1}: ${p.scene_title || ''}</h5>
+            <label>Hộp dẫn truyện (Narration #1)</label>
+            <textarea rows="2" id="ed_nar_${idx}">${narText}</textarea>
+            <label>Bóng thoại nhân vật (Bubble #1)</label>
+            <textarea rows="2" id="ed_bub_${idx}">${bubText}</textarea>
+            <label>Chữ tượng thanh (SFX)</label>
+            <input type="text" id="ed_sfx_${idx}" value="${sfxText.replace(/"/g, '&quot;')}" />
+            <label>Lời dẫn chuyển cảnh (Gutter Text)</label>
+            <textarea rows="2" id="ed_gut_${idx}">${p.gutter_text || ''}</textarea>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    async function saveAndRenderTypeset() {
+      if (!currentProject) return;
+      const sb = currentProject.storyboard;
+      sb.title = document.getElementById('ed_title').value;
+      sb.subtitle = document.getElementById('ed_subtitle').value;
+
+      (sb.panels || []).forEach((p, idx) => {
+        const narVal = document.getElementById(`ed_nar_${idx}`).value.trim();
+        if (p.narrations && p.narrations.length > 0) {
+          p.narrations[0].text = narVal;
+        } else if (narVal) {
+          p.narrations = [{ text: narVal, x: 400, y: 105, w: 660, h: 95 }];
+        }
+
+        const bubVal = document.getElementById(`ed_bub_${idx}`).value.trim();
+        if (p.bubbles && p.bubbles.length > 0) {
+          p.bubbles[0].text = bubVal;
+        } else if (bubVal) {
+          p.bubbles = [{ text: bubVal, x: 240, y: 120, rx: 210, ry: 70, tail: [380, 260] }];
+        }
+
+        const sfxVal = document.getElementById(`ed_sfx_${idx}`).value.trim();
+        if (p.sfx && p.sfx.length > 0) {
+          p.sfx[0].text = sfxVal;
+        } else if (sfxVal) {
+          p.sfx = [{ text: sfxVal, x: 420, y: 500, font_size: 52 }];
+        }
+
+        p.gutter_text = document.getElementById(`ed_gut_${idx}`).value;
+      });
+
+      const res = await fetch('/api/render', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: currentProject.project_id,
+          storyboard: sb
+        })
+      });
+      const data = await res.json();
+      if (data.project) {
+        currentProject = data.project;
+        renderStage();
+      }
+    }
+
+    async function generateNewWebtoon() {
+      const prompt = document.getElementById('promptInput').value.trim();
+      if (!prompt) {
+        alert('Vui lòng nhập yêu cầu tạo truyện (ví dụ: Tạo bộ truyện Sơn Tinh Thủy Tinh)!');
+        return;
+      }
+      const provider = document.getElementById('providerSelect').value;
+      const apiKey = document.getElementById('apiKeyInput').value.trim();
+      const numPanels = parseInt(document.getElementById('numPanelsSelect').value, 10);
+
+      const btn = document.getElementById('generateBtn');
+      const toast = document.getElementById('genStatusToast');
+      btn.disabled = true;
+      btn.innerText = '⏳ Đang lên kịch bản & vẽ từng khung ảnh...';
+      toast.style.display = 'block';
+      toast.innerText = 'AI đang thiết kế Storyboard, vẽ các khung hình dọc và đóng bóng thoại tiếng Việt (khoảng 20-45 giây)...';
+
+      try {
+        const res = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt,
+            num_panels: numPanels,
+            provider,
+            api_key: apiKey,
+            save_key: true
+          })
+        });
+        const data = await res.json();
+        if (data.error) {
+          toast.innerText = '❌ ' + data.error;
+        } else {
+          toast.innerText = '✅ Đã xuất bản xong bộ truyện: ' + data.project.title;
+          await loadProjectList(data.project.project_id);
+        }
+      } catch (err) {
+        toast.innerText = '❌ Lỗi kết nối: ' + err.message;
+      } finally {
+        btn.disabled = false;
+        btn.innerText = '🚀 Tạo Bộ Truyện Webtoon Tự Động';
+      }
+    }
+
+    loadProjectList();
+  </script>
+</body>
+</html>

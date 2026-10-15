@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dã Sử Dị Giới: Thạch Sanh - Chương 1 | AI-Assisted Webtoon Demo</title>
+  <style>
+    :root {
+      --bg-dark: #05050c;
+      --bg-panel: #0e0e1a;
+      --accent-cyan: #22d3ee;
+      --accent-gold: #facc15;
+      --accent-purple: #a855f7;
+      --text-light: #f1f5f9;
+      --text-muted: #94a3b8;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-light);
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      overflow-x: hidden;
+    }
+    /* Top Sticky Navigation Bar (Chuẩn Webtoon/Kakao) */
+    .topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: rgba(8, 8, 18, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(168, 85, 247, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      z-index: 1000;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge-pd {
+      background: linear-gradient(135deg, #7e22ce, #2563eb);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .comic-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-light);
+    }
+    .chapter-sub {
+      font-size: 13px;
+      color: var(--accent-cyan);
+      margin-left: 6px;
+    }
+    .mode-switcher {
+      display: flex;
+      gap: 8px;
+      background: #141428;
+      padding: 4px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .mode-btn {
+      background: transparent;
+      color: var(--text-muted);
+      border: none;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .mode-btn.active {
+      background: var(--accent-purple);
+      color: #fff;
+      box-shadow: 0 0 12px rgba(168, 85, 247, 0.5);
+    }
+
+    /* Main Vertical Webtoon Container */
+    .reader-container {
+      max-width: 720px;
+      margin: 60px auto 0;
+      background: var(--bg-dark);
+      box-shadow: 0 0 60px rgba(0, 0, 0, 0.9);
+      text-align: center;
+    }
+    .hero-header {
+      padding: 55px 20px 35px;
+      background: radial-gradient(circle at center, rgba(88, 28, 135, 0.28) 0%, rgba(5, 5, 12, 1) 75%);
+    }
+    .hero-header h1 {
+      font-size: 30px;
+      color: var(--accent-gold);
+      letter-spacing: 1.5px;
+      text-shadow: 0 2px 15px rgba(250, 204, 21, 0.4);
+      margin-bottom: 10px;
+    }
+    .hero-header h2 {
+      font-size: 18px;
+      color: var(--accent-cyan);
+      margin-bottom: 12px;
+    }
+    .hero-header p {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .webtoon-panel {
+      width: 100%;
+      display: block;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+    .gutter {
+      padding: 55px 24px;
+      background: var(--bg-dark);
+      font-size: 19px;
+      font-weight: 700;
+      font-style: italic;
+      line-height: 1.6;
+      letter-spacing: 0.4px;
+      text-shadow: 0 0 14px rgba(168, 85, 247, 0.6);
+    }
+    .gutter.purple { color: #d8b4fe; }
+    .gutter.cyan { color: #a5f3fc; text-shadow: 0 0 14px rgba(34, 211, 238, 0.6); }
+
+    /* Commercial Paywall / Unlock Next Chapter Demo */
+    .paywall-card {
+      margin: 40px 20px 80px;
+      padding: 32px 24px;
+      background: linear-gradient(180deg, rgba(20, 20, 42, 0.95) 0%, rgba(12, 10, 26, 0.98) 100%);
+      border: 1px solid rgba(250, 204, 21, 0.35);
+      border-radius: 16px;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.7);
+    }
+    .paywall-card h3 {
+      color: var(--accent-gold);
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+    .paywall-card p {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+    .unlock-btn {
+      background: linear-gradient(90deg, #eab308, #f97316);
+      color: #09090b;
+      font-weight: 800;
+      font-size: 15px;
+      border: none;
+      padding: 14px 28px;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(234, 179, 8, 0.4);
+      transition: transform 0.15s;
+    }
+    .unlock-btn:hover {
+      transform: scale(1.04);
+    }
+  </style>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="badge-pd">Public Domain IP</span>
+      <div>
+        <span class="comic-title">Dã Sử Dị Giới: Thạch Sanh</span>
+        <span class="chapter-sub">Chương 1</span>
+      </div>
+    </div>
+    <div class="mode-switcher">
+      <button class="mode-btn active" onclick="setMode('typeset', this)">Bản Webtoon (Đã Typeset)</button>
+      <button class="mode-btn" onclick="setMode('raw', this)">Ảnh AI Gốc (Raw Art)</button>
+      <button class="mode-btn" onclick="setMode('strip', this)">File Dọc Nguyên Cột</button>
+    </div>
+  </header>
+
+  <main class="reader-container" id="panelView">
+    <div class="hero-header">
+      <h1>DÃ SỬ DỊ GIỚI: THẠCH SANH</h1>
+      <h2>CHƯƠNG 1: HUYẾT XÀ TRONG MIẾU CỔ</h2>
+      <p>Cốt truyện: Cổ tích Việt Nam (Public Domain) • Minh họa AI + Hậu kỳ Typesetting</p>
+    </div>
+
+    <img id="img1" class="webtoon-panel" src="assets/panel_1_typeset.jpg" alt="Panel 1" />
+    <div class="gutter purple">
+      Bóng tối nuốt chửng ánh trăng...<br/>
+      Một luồng sát khí thượng cổ trỗi dậy!
+    </div>
+
+    <img id="img2" class="webtoon-panel" src="assets/panel_2_typeset.jpg" alt="Panel 2" />
+    <div class="gutter cyan">
+      Đứng trước Đại Yêu khiến cả kinh thành khiếp đảm...<br/>
+      Chàng tiều phu trẻ chỉ khẽ nhếch môi.
+    </div>
+
+    <img id="img3" class="webtoon-panel" src="assets/panel_3_typeset.jpg" alt="Panel 3" />
+    <div class="gutter cyan">
+      Một nhát rìu — Phân định sinh tử!
+    </div>
+
+    <img id="img4" class="webtoon-panel" src="assets/panel_4_typeset.jpg" alt="Panel 4" />
+
+    <div class="paywall-card">
+      <h3>🔒 CHƯƠNG 2: ÂM MƯU CỦA LÝ THÔNG</h3>
+      <p>Huyết Xà ngã xuống, nhưng kẻ đáng sợ hơn cả yêu ma đang đợi Thạch Sanh ngoài cửa miếu...</p>
+      <button class="unlock-btn" onclick="alert('Demo tính năng thương mại: Trừ 20 Xu để mở khóa Chương 2!')">
+        🪙 Mở khóa ngay (20 Xu)
+      </button>
+    </div>
+  </main>
+
+  <main class="reader-container" id="stripView" style="display: none;">
+    <img class="webtoon-panel" src="assets/webtoon_chapter1_strip.jpg" alt="Full Webtoon Strip" />
+  </main>
+
+  <script>
+    function setMode(mode, btn) {
+      document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const panelView = document.getElementById('panelView');
+      const stripView = document.getElementById('stripView');
+
+      if (mode === 'strip') {
+        panelView.style.display = 'none';
+        stripView.style.display = 'block';
+      } else {
+        panelView.style.display = 'block';
+        stripView.style.display = 'none';
+        const suffix = mode === 'typeset' ? 'typeset' : 'raw';
+        for (let i = 1; i <= 4; i++) {
+          document.getElementById('img' + i).src = `assets/panel_${i}_${suffix}.jpg`;
+        }
+      }
+    }
+  </script>
+</body>
+</html>

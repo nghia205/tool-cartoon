@@ -1,0 +1,352 @@
+{
+  "title": "SƠN TINH - THỦY TINH: ĐẠI CHIẾN THẦN LINH",
+  "subtitle": "CHƯƠNG 1: ĐẠI HỒNG THỦY PHONG CHÂU",
+  "credits": "Nguyên tác: Truyền thuyết Việt Nam (Public Domain) • AI Webtoon Studio",
+  "footer_title": "— MỖI NĂM BÃO LŨ QUAY VỀ: ĐÓN ĐỌC CHƯƠNG 2 —",
+  "character_bible": "Sơn Tinh: Noble 22-year-old Vietnamese Mountain Deity, raven-black hair in warrior knot, glowing amber-gold eyes, dark green & bronze armor with glowing golden Dong Son sun patterns. Thủy Tinh: Wrathful Sea Deity, flowing silver-white hair, glowing icy-blue eyes, dark abyssal dragon-scale armor with cyan runes, wielding a crackling lightning trident.",
+  "panels": [
+    {
+      "panel_index": 1,
+      "scene_title": "Biến Cố Ngày Rước Dâu",
+      "image_prompt": "Ancient Vietnamese royal citadel Phong Chau wedding procession overshadowed by a colossal black-and-cyan tsunami wave and lightning vortex.",
+      "narrations": [
+        {
+          "text": "[KINH THÀNH PHONG CHÂU - NIÊN HIỆU HÙNG VƯƠNG THỨ 18]\nLễ vật sính lễ đã đủ. Sơn Tinh chính thức rước Mị Nương về núi Tản Viên.",
+          "x": 400,
+          "y": 95,
+          "w": 710,
+          "h": 100,
+          "border_color": [
+            56,
+            189,
+            248,
+            235
+          ],
+          "text_color": [
+            240,
+            249,
+            255,
+            255
+          ],
+          "font_size": 21,
+          "wrap": 44
+        },
+        {
+          "text": "Nhưng ngay khoảnh khắc đoàn rước dâu bước qua cổng thành...\nCả bầu trời biển Đông bỗng nhiên sụp đổ!",
+          "x": 400,
+          "y": -95,
+          "w": 680,
+          "h": 95,
+          "border_color": [
+            250,
+            204,
+            21,
+            235
+          ],
+          "text_color": [
+            254,
+            249,
+            195,
+            255
+          ],
+          "font_size": 21,
+          "wrap": 42
+        }
+      ],
+      "sfx": [
+        {
+          "text": "ẦM ĐOÀNGGG!!",
+          "x": 280,
+          "y": 460,
+          "font_size": 52,
+          "color": [
+            103,
+            232,
+            249,
+            255
+          ],
+          "glow_color": [
+            2,
+            132,
+            199,
+            255
+          ],
+          "angle": -10
+        }
+      ],
+      "bubbles": [],
+      "gutter_text": "Biển gầm thét... Vạn dặm sóng thần nuốt chửng cả chân trời!\nVị Thần Biển Cả đến muộn một bước đã hóa thành Cuồng Nộ!"
+    },
+    {
+      "panel_index": 2,
+      "scene_title": "Thủy Tinh Cưỡi Giao Long",
+      "image_prompt": "Thủy Tinh with silver hair and cyan eyes in abyssal dragon armor standing atop a roaring sea dragon holding a lightning trident.",
+      "narrations": [],
+      "sfx": [
+        {
+          "text": "GÀOOOO—!!",
+          "x": 230,
+          "y": 760,
+          "font_size": 52,
+          "color": [
+            165,
+            243,
+            252,
+            255
+          ],
+          "glow_color": [
+            37,
+            99,
+            235,
+            255
+          ],
+          "angle": 8
+        }
+      ],
+      "bubbles": [
+        {
+          "text": "SƠN TINH!!\nGiao Mị Nương ra đây!!",
+          "x": 235,
+          "y": 115,
+          "rx": 195,
+          "ry": 66,
+          "tail": [
+            400,
+            290
+          ],
+          "dark_mode": true,
+          "font_size": 23,
+          "wrap": 22
+        },
+        {
+          "text": "Bằng không, ta sẽ nhấn chìm\ncả giang sơn Phong Châu này\nxuống đáy biển sâu!!",
+          "x": 510,
+          "y": -110,
+          "rx": 245,
+          "ry": 82,
+          "tail": [
+            455,
+            -340
+          ],
+          "dark_mode": true,
+          "font_size": 22,
+          "wrap": 26
+        }
+      ],
+      "gutter_text": "Trước cơn thịnh nộ muốn hủy diệt bách tính của Thủy Tinh...\nThánh Tản Viên bước lên vách đá, ánh mắt rực sáng kim quang!"
+    },
+    {
+      "panel_index": 3,
+      "scene_title": "Sơn Tinh Kích Hoạt Thần Trận",
+      "image_prompt": "Sơn Tinh in Dong Son bronze sun armor kneeling on a cliff slamming his glowing golden hand into a runic circle cracking the earth.",
+      "narrations": [
+        {
+          "text": "[THẦN THÔNG THỨC TỈNH: THÁI SƠN DI NHẠC TRẬN!]",
+          "x": 400,
+          "y": -85,
+          "w": 630,
+          "h": 76,
+          "border_color": [
+            250,
+            204,
+            21,
+            255
+          ],
+          "text_color": [
+            254,
+            240,
+            138,
+            255
+          ],
+          "font_size": 22,
+          "wrap": 45
+        }
+      ],
+      "sfx": [
+        {
+          "text": "RẦMMM!!",
+          "x": 205,
+          "y": 825,
+          "font_size": 52,
+          "color": [
+            253,
+            224,
+            71,
+            255
+          ],
+          "glow_color": [
+            217,
+            119,
+            6,
+            255
+          ],
+          "angle": -10
+        }
+      ],
+      "bubbles": [
+        {
+          "text": "Thủy Tinh! Ngươi vì tư tình\nmà gieo tai ương cho muôn dân...",
+          "x": 230,
+          "y": 100,
+          "rx": 215,
+          "ry": 66,
+          "tail": [
+            390,
+            240
+          ],
+          "dark_mode": false,
+          "font_size": 21,
+          "wrap": 26
+        },
+        {
+          "text": "Nước của ngươi dâng cao một trượng,\nNÚI CỦA TA SẼ VƯƠN CAO MƯỜI TRƯỢNG!",
+          "x": 555,
+          "y": 530,
+          "rx": 225,
+          "ry": 74,
+          "tail": [
+            490,
+            350
+          ],
+          "dark_mode": false,
+          "font_size": 20,
+          "wrap": 26
+        }
+      ],
+      "gutter_text": "Đại địa chấn động! Hồn thiêng sông núi Lạc Việt thức giấc!"
+    },
+    {
+      "panel_index": 4,
+      "scene_title": "Đại Chiến Dời Non Lấp Biển",
+      "image_prompt": "Colossal golden rune mountain peaks erupting upward to block a monstrous dark tsunami wave and sea-serpent.",
+      "narrations": [
+        {
+          "text": "Hàng vạn dãy núi đá khắc cổ tự Đông Sơn phá đất vươn lên,\nhóa thành bức tường thành bất khả xâm phạm!",
+          "x": 380,
+          "y": 100,
+          "w": 680,
+          "h": 95,
+          "border_color": [
+            250,
+            204,
+            21,
+            240
+          ],
+          "text_color": [
+            255,
+            251,
+            235,
+            255
+          ],
+          "font_size": 21,
+          "wrap": 44
+        }
+      ],
+      "sfx": [
+        {
+          "text": "ĐOÀNGGG—!!",
+          "x": 450,
+          "y": 730,
+          "font_size": 62,
+          "color": [
+            254,
+            240,
+            138,
+            255
+          ],
+          "glow_color": [
+            234,
+            88,
+            12,
+            255
+          ],
+          "angle": -12
+        }
+      ],
+      "bubbles": [
+        {
+          "text": "KHÔNG THỂ NÀO!!\nSức mạnh của đại địa...!!",
+          "x": 225,
+          "y": -110,
+          "rx": 200,
+          "ry": 66,
+          "tail": [
+            290,
+            -450
+          ],
+          "dark_mode": true,
+          "font_size": 22,
+          "wrap": 22
+        }
+      ],
+      "gutter_text": "Cuộc đại chiến kéo dài suốt nhiều ngày đêm...\nCuối cùng, thủy triều kiệt sức phải rút về biển Đông."
+    },
+    {
+      "panel_index": 5,
+      "scene_title": "Bình Minh Trên Đỉnh Tản Viên",
+      "image_prompt": "Heroic back-view of Sơn Tinh standing on the highest peak of Mount Tản Viên at golden sunrise looking over the valley and receding ocean.",
+      "narrations": [
+        {
+          "text": "Ánh bình minh chiếu rạng non sông Văn Lang.\nNhưng oán hận của Thủy Tinh vẫn chưa bao giờ dập tắt...",
+          "x": 400,
+          "y": 100,
+          "w": 670,
+          "h": 95,
+          "border_color": [
+            250,
+            204,
+            21,
+            235
+          ],
+          "text_color": [
+            254,
+            249,
+            195,
+            255
+          ],
+          "font_size": 21,
+          "wrap": 42
+        },
+        {
+          "text": "Mỗi năm, khi mùa mưa bão kéo về, trận chiến giữa Núi và Biển\nlại một lần nữa tái diễn!",
+          "x": 400,
+          "y": -95,
+          "w": 670,
+          "h": 95,
+          "border_color": [
+            56,
+            189,
+            248,
+            235
+          ],
+          "text_color": [
+            224,
+            242,
+            254,
+            255
+          ],
+          "font_size": 21,
+          "wrap": 42
+        }
+      ],
+      "sfx": [],
+      "bubbles": [
+        {
+          "text": "Dù ngươi có quay lại bao nhiêu lần...\nTản Viên Sơn vẫn sẽ bảo vệ mảnh đất này!",
+          "x": 270,
+          "y": 350,
+          "rx": 240,
+          "ry": 72,
+          "tail": [
+            450,
+            480
+          ],
+          "dark_mode": false,
+          "font_size": 21,
+          "wrap": 28
+        }
+      ],
+      "gutter_text": ""
+    }
+  ]
+}
