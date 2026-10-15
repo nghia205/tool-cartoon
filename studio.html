@@ -345,17 +345,17 @@
       <div class="card">
         <div class="card-title">
           <span>🔑 1. Cấu Hình AI & API Key</span>
-          <span style="font-size:11px;color:#4ade80;">Sẵn sàng</span>
+          <span id="apiKeyStatusBadge" style="font-size:11px;color:#4ade80;">✅ Đã nạp Gemini Key (.env)</span>
         </div>
         <label>Nhà cung cấp AI (Storyboard + Character + Panels)</label>
         <select id="providerSelect">
-          <option value="gemini">Google Gemini API (Gemini Flash + Imagen / Multimodal)</option>
+          <option value="gemini" selected>Google Gemini API (Đã nạp Key trong .env)</option>
           <option value="openai">OpenAI API (GPT-4o + DALL-E 3)</option>
           <option value="free">Chế độ Miễn phí (Pollinations Flux AI)</option>
         </select>
 
-        <label>Nhập API Key của bạn (Tự động lưu vào .env)</label>
-        <input type="password" id="apiKeyInput" placeholder="Dán AIzaSy... hoặc sk-... (Để trống = dùng Free AI)" />
+        <label>Nhập API Key mới (Hoặc để trống để dùng Gemini Key đã nạp sẵn)</label>
+        <input type="password" id="apiKeyInput" placeholder="Đã cấu hình sẵn GEMINI_API_KEY trong .env" />
       </div>
 
       <div class="card">
@@ -363,12 +363,12 @@
           <span>⚡ 2. Tạo Trọn Bộ Truyện Từ 1 Prompt</span>
         </div>
         <label>Nhập yêu cầu tạo trọn bộ truyện tranh</label>
-        <textarea id="promptInput" rows="3" placeholder="Ví dụ: Hãy tạo cho tôi toàn bộ truyện tranh về Sơn Tinh Thủy Tinh..."></textarea>
+        <textarea id="promptInput" rows="3" placeholder="Ví dụ: Hãy tạo cho tôi toàn bộ truyện tranh về Tấm Cám..."></textarea>
 
         <div class="preset-chips">
+          <span class="chip" onclick="fillPreset('Hãy tạo cho tôi toàn bộ truyện tranh về Tấm Cám từ lúc cá Bống, trẩy hội thử hài đến khi Tấm hóa thân và trở lại làm Hoàng Hậu')">Trọn bộ Tấm Cám</span>
           <span class="chip" onclick="fillPreset('Hãy tạo cho tôi toàn bộ truyện tranh về Sơn Tinh Thủy Tinh từ lúc Vua Hùng kén rể đến đại chiến dời non lấp biển')">Trọn bộ Sơn Tinh Thủy Tinh</span>
           <span class="chip" onclick="fillPreset('Hãy tạo cho tôi toàn bộ truyện tranh về Thánh Gióng từ lúc cậu bé làng Phù Đổng đến khi cưỡi ngựa sắt diệt giặc Ân và bay về trời')">Trọn bộ Thánh Gióng</span>
-          <span class="chip" onclick="fillPreset('Hãy tạo cho tôi toàn bộ truyện tranh về Lạc Long Quân và Âu Cơ trăm trứng nở trăm con')">Trọn bộ Con Rồng Cháu Tiên</span>
         </div>
 
         <div class="grid-2">
@@ -435,7 +435,20 @@
       document.getElementById('promptInput').value = text;
     }
 
+    async function checkApiConfig() {
+      try {
+        const res = await fetch('/api/config');
+        const cfg = await res.json();
+        const badge = document.getElementById('apiKeyStatusBadge');
+        if (cfg.has_gemini_key) {
+          badge.innerText = '✅ Đã nạp Gemini Key (.env)';
+          badge.style.color = '#4ade80';
+        }
+      } catch (e) {}
+    }
+
     async function loadProjectList(selectId = null) {
+      await checkApiConfig();
       const res = await fetch('/api/projects');
       const data = await res.json();
       const listEl = document.getElementById('projectList');
@@ -455,8 +468,10 @@
       if (selectId) {
         await selectProject(selectId);
       } else if (data.projects.length > 0) {
+        const tc = data.projects.find(p => p.project_id === 'tam_cam');
         const sttt = data.projects.find(p => p.project_id === 'son_tinh_thuy_tinh');
-        await selectProject(sttt ? sttt.project_id : data.projects[0].project_id);
+        const target = tc || sttt || data.projects[0];
+        await selectProject(target.project_id);
       }
     }
 

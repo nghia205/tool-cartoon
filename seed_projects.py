@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
 """
-Khởi tạo sẵn TRỌN BỘ truyện tranh Webtoon hoàn chỉnh trong thư mục projects/:
-1. son_tinh_thuy_tinh:
-   - 4 Hồ sơ Nhân vật đồng bộ (Sơn Tinh, Thủy Tinh, Công chúa Mị Nương, Vua Hùng thứ 18)
-   - Chương 1: Hội Kén Rể Thành Phong Châu (4 khung hình)
-   - Chương 2: Sính Lễ Thần Kỳ & Cơn Thịnh Nộ Biển Đông (4 khung hình)
-   - Chương 3: Đại Chiến Dời Non Lấp Biển & Hồi Kết Nghìn Năm (5 khung hình)
-2. thach_sanh:
-   - Chương 1: Huyết Xà Trong Miếu Cổ (4 khung hình)
+Khởi tạo sẵn TRỌN BỘ các bộ truyện tranh Webtoon hoàn chỉnh trong thư mục projects/:
+1. tam_cam (Tấm Cám: Phượng Hoàng Niết Bàn - 4 Nhân vật + 3 Chương / 12 Khung hình)
+2. son_tinh_thuy_tinh (Sơn Tinh - Thủy Tinh: Đại Chiến Thần Linh - 4 Nhân vật + 3 Chương / 13 Khung hình)
+3. thach_sanh (Dã Sử Dị Giới: Thạch Sanh - 1 Chương / 4 Khung hình)
 """
 import os
 import json
@@ -17,17 +13,17 @@ from studio_engine import PROJECTS_DIR, render_project
 ARTIFACT_DIR = "/home/nghia/.gemini/antigravity-cli/brain/736e78f7-050d-4df0-a16c-7165f93d1f37"
 
 
-def seed_son_tinh_thuy_tinh_full_series():
-    proj_id = "son_tinh_thuy_tinh"
+def seed_tam_cam_full_series():
+    proj_id = "tam_cam"
     proj_dir = os.path.join(PROJECTS_DIR, proj_id)
     os.makedirs(proj_dir, exist_ok=True)
 
     # 1. Copy 4 Character Reference Sheets
     char_files = {
-        "son_tinh": "son_tinh_character_sheet_1792036383809.jpg",
-        "thuy_tinh": "thuy_tinh_character_sheet_1792036389062.jpg",
-        "mi_nuong": "mi_nuong_character_sheet_1792036383817.jpg",
-        "hung_vuong": "hung_vuong_character_sheet_1792036386892.jpg",
+        "tam": "tam_empress_reference_sheet_1792037847349.jpg",
+        "hoang_tu": "young_dragon_king_fullbody_sheet_1792037875053.jpg",
+        "cam": "cam_character_reference_sheet_1792037850950.jpg",
+        "di_ghe": "di_ghe_character_sheet_1792037851611.jpg",
     }
     for cid, fname in char_files.items():
         shutil.copyfile(
@@ -35,26 +31,25 @@ def seed_son_tinh_thuy_tinh_full_series():
             os.path.join(proj_dir, f"char_{cid}_raw.jpg"),
         )
 
-    # 2. Copy Raw Panels cho cả 3 Chương (Tổng cộng 13 khung hình xuyên suốt bộ truyện)
+    # 2. Copy Raw Panels cho cả 3 Chương (Tổng cộng 12 khung hình từ đầu đến kết cục)
     chapter_raw_sources = {
         1: [
-            "chapter1_panel1_royal_decree_1792036385352.jpg",
-            "chapter1_panel2_arrival_two_gods_1792036392159.jpg",
-            "phong_chau_contest_of_gods_1792036424266.jpg",
-            "hung_vuong_decree_panel_1792036430019.jpg",
+            "tam_cam_ch1_panel1_png_1792037851789.jpg",
+            "tam_cam_ch1_panel2_sparrows_golden_slippers_1792037852664.jpg",
+            "prince_finds_golden_slipper_1792037919809.jpg",
+            "tam_cam_ch1_p4_royal_betrothal_1792037922723.jpg",
         ],
         2: [
-            "son_tinh_sacred_beasts_dawn_1792036432079.jpg",
-            "son_tinh_mi_nuong_ch2_p2_1792036428789.jpg",
-            "thuy_tinh_fury_gate_1792036423186.jpg",
-            "thuy_tinh_ocean_army_panel4_1792036420743.jpg",
+            "tam_cam_ch2_betrayal_areca_palm_1792037919303.jpg",
+            "ch2_panel2_golden_oriole_returns_1792037983338.jpg",
+            "ch2_panel3_golden_persimmon_notext_1792037947394.jpg",
+            "tam_cam_ch2_p4_reunion_1792037989996.jpg",
         ],
         3: [
-            "storm_approaches_phong_chau_panel1_1792034376060.jpg",
-            "thuy_tinh_wrath_panel2_1792034361901.jpg",
-            "son_tinh_panel_3_1792034364921.jpg",
-            "webtoon_panel4_clash_mountain_sea_1792034361636.jpg",
-            "son_tinh_panel_5_dawn_1792034362941.jpg",
+            "chapter3_panel1_empress_tam_return_1792037987506.jpg",
+            "cam_kneels_before_empress_tam_1792038025967.jpg",
+            "ch3_panel3_karmic_retribution_1792037989407.jpg",
+            "webtoon_ch3_panel4_finale_1792037987199.jpg",
         ],
     }
 
@@ -66,192 +61,367 @@ def seed_son_tinh_thuy_tinh_full_series():
             )
 
     storyboard = {
-        "title": "SƠN TINH - THỦY TINH: ĐẠI CHIẾN THẦN LINH",
-        "subtitle": "TRỌN BỘ TRUYỀN THUYẾT LẠC VIỆT (3 CHƯƠNG HOÀN CHỈNH)",
-        "credits": "Nguyên tác: Truyền thuyết Việt Nam (Public Domain) • AI Webtoon Studio",
+        "title": "TẤM CÁM: PHƯỢNG HOÀNG NIẾT BÀN",
+        "subtitle": "TRỌN BỘ CỔ TÍCH VIỆT NAM (3 CHƯƠNG HOÀN CHỈNH)",
+        "credits": "Nguyên tác: Cổ tích Việt Nam (Public Domain) • AI Webtoon Studio",
         "characters": [
             {
-                "id": "son_tinh",
-                "name": "Sơn Tinh (Thánh Tản Viên)",
-                "role": "Chúa Tể Núi Tản Viên • Thần Hệ Kim - Thổ",
+                "id": "tam",
+                "name": "Tấm (Hoàng Hậu Phượng Hoàng)",
+                "role": "Nữ chính • Từ Thôn Nữ Dịu Dàng Đến Mẫu Nghi Thiên Hạ",
                 "visual_dna": (
-                    "22-year-old noble Vietnamese Mountain Deity, sharp heroic jawline, raven-black hair tied "
-                    "in a high warrior topknot with a golden hairpin, glowing amber-gold eyes, wearing dark "
-                    "forest-green and bronze scale armor etched with glowing golden Dong Son sun-drum patterns, "
-                    "flowing dark green cape."
+                    "Breathtakingly beautiful 18-year-old ancient Vietnamese maiden who becomes Empress, "
+                    "silky waist-length raven-black hair adorned with a glowing golden phoenix-and-lotus hairpin, "
+                    "luminous warm amber-gold eyes, wearing ornate crimson, peach-pink, and gold Vietnamese royal silk robes."
                 ),
             },
             {
-                "id": "thuy_tinh",
-                "name": "Thủy Tinh (Thần Biển Đông)",
-                "role": "Chúa Tể Đại Dương • Thần Hệ Thủy - Lôi",
+                "id": "hoang_tu",
+                "name": "Quốc Vương (Minh Quân Nước Nam)",
+                "role": "Nam chính • Vị Vua Trẻ Si Tình & Uy Nghiêm",
                 "visual_dna": (
-                    "Fierce handsome Sea Deity, long flowing silver-white hair, glowing icy-blue eyes, "
-                    "wearing dark abyssal black-blue dragon-scale armor etched with glowing cyan runes, "
-                    "holding a crackling blue lightning trident."
+                    "Strikingly handsome 21-year-old Vietnamese monarch, sharp noble jawline, raven-black hair "
+                    "crowned with a golden dragon coronet, warm deep golden eyes, wearing grand black-and-gold "
+                    "royal dragon-embroidered robes with a crimson silk inner collar."
                 ),
             },
             {
-                "id": "mi_nuong",
-                "name": "Công Chúa Mị Nương",
-                "role": "Ngọc Nữ Kinh Thành Phong Châu",
+                "id": "cam",
+                "name": "Cám (Ác Nữ Đố Kỵ)",
+                "role": "Phản diện • Người Em Cùng Cha Khác Mẹ Tham Lam",
                 "visual_dna": (
-                    "Breathtakingly beautiful 18-year-old ancient Vietnamese royal princess, long silky "
-                    "raven-black hair adorned with an ornate golden Lac bird phoenix crown, warm golden-brown eyes, "
-                    "wearing regal crimson-and-ivory silk royal robes embroidered with golden lotus motifs."
+                    "17-year-old scheming villainess stepsister, sharp upturned fox-like dark eyes, arrogant "
+                    "jealous smirk, black hair pinned with silver hairpins, wearing flashy violet-and-magenta silk robes."
                 ),
             },
             {
-                "id": "hung_vuong",
-                "name": "Hùng Vương Thứ 18",
-                "role": "Quốc Vương Nước Văn Lang",
+                "id": "di_ghe",
+                "name": "Bà Dì Ghẻ (Mẹ Cám)",
+                "role": "Phản diện • Người Mẹ Kế Độc Ác & Thâm Hiểm",
                 "visual_dna": (
-                    "Majestic 55-year-old warrior-king with a long silver-streaked beard, sharp wise eyes, "
-                    "wearing an ornate golden feathered Lac Viet royal crown and grand black-red-and-gold "
-                    "bronze-armored royal robes, holding a golden dragon scepter."
+                    "45-year-old cold, calculating matriarch villainess, sharp high cheekbones, narrow scheming eyes, "
+                    "hair coiled tightly in a dark bun, wearing dark plum-and-gold brocade traditional robes."
                 ),
             },
         ],
         "chapters": [
             # ==================================================================
-            # CHƯƠNG 1: HỘI KÉN RỂ THÀNH PHONG CHÂU
+            # CHƯƠNG 1: GIỎ TÉP, CÁ BỐNG & ĐÔI HÀI THÊU CHỈ VÀNG
             # ==================================================================
             {
                 "chapter_index": 1,
-                "chapter_title": "CHƯƠNG 1: HỘI KÉN RỂ THÀNH PHONG CHÂU",
-                "footer_title": "— HẾT CHƯƠNG 1: ĐÓN ĐỌC CHƯƠNG 2 - SÍNH LỄ THẦN KỲ —",
+                "chapter_title": "CHƯƠNG 1: ĐÔI HÀI THÊU CHỈ VÀNG & LỄ LẬP HẬU",
+                "footer_title": "— HẾT CHƯƠNG 1: ĐÓN ĐỌC CHƯƠNG 2 - KIẾP NẠN & HÓA THÂN —",
                 "panels": [
                     {
                         "panel_index": 1,
-                        "scene_title": "Chiếu Chỉ Của Vua Hùng",
-                        "characters_present": ["hung_vuong", "mi_nuong"],
-                        "image_prompt": "Grand ancient Vietnamese throne hall with King Hùng Vương on bronze throne and Princess Mị Nương standing beside him.",
+                        "scene_title": "Giọt Nước Mắt Bên Đầm Sen & Ông Bụt",
+                        "characters_present": ["tam"],
+                        "image_prompt": "Young Tấm weeping beside an empty basket by a sunset lotus pond as Ông Bụt materializes in golden light.",
                         "narrations": [
                             {
-                                "text": "[KINH THÀNH PHONG CHÂU - NƯỚC VĂN LANG]\nVua Hùng thứ 18 có người con gái tuyệt sắc tên là Mị Nương.",
+                                "text": "Mồ côi cha mẹ từ sớm, Tấm phải sống cảnh cơ cực dưới đòn roi\nvà sự lừa lọc của mẹ con Dì Ghẻ...",
                                 "x": 400,
                                 "y": 95,
                                 "w": 680,
-                                "h": 95,
-                                "border_color": [250, 204, 21, 240],
-                                "text_color": [254, 249, 195, 255],
-                                "font_size": 21,
-                            }
-                        ],
-                        "sfx": [],
-                        "bubbles": [
-                            {
-                                "text": "Ái nữ của ta đã đến tuổi cập kê.\nTa muốn tìm một bậc kỳ tài xứng đáng\nđể gả Mị Nương!",
-                                "x": 270,
-                                "y": -115,
-                                "rx": 240,
-                                "ry": 78,
-                                "tail": [380, -380],
-                                "dark_mode": False,
-                                "font_size": 21,
-                            }
-                        ],
-                        "gutter_text": "Chiếu kén rể vừa ban ra, anh hào khắp bốn phương nô nức kéo về.\nNhưng nổi bật nhất là sự xuất hiện của HAI VỊ THẦN!",
-                    },
-                    {
-                        "panel_index": 2,
-                        "scene_title": "Nhất Sơn Nhất Hải Tươngùng",
-                        "characters_present": ["son_tinh", "thuy_tinh"],
-                        "image_prompt": "Split-aura face-off between Sơn Tinh (left, golden aura) and Thủy Tinh (right, cyan lightning aura).",
-                        "narrations": [
-                            {
-                                "text": "Một người là SƠN TINH — Chúa tể vùng núi Tản Viên.\nMột người là THỦY TINH — Bá chủ vùng biển Đông thẳm sâu!",
-                                "x": 400,
-                                "y": 95,
-                                "w": 690,
-                                "h": 95,
-                                "border_color": [56, 189, 248, 235],
-                                "text_color": [240, 249, 255, 255],
-                                "font_size": 21,
-                            }
-                        ],
-                        "sfx": [
-                            {
-                                "text": "XẸT ĐOÀNG!!",
-                                "x": 400,
-                                "y": 245,
-                                "font_size": 48,
-                                "color": [253, 224, 71, 255],
-                                "glow_color": [6, 182, 212, 255],
-                                "angle": -6,
-                            }
-                        ],
-                        "bubbles": [
-                            {
-                                "text": "Mị Nương phải thuộc về\nChúa tể biển khơi!",
-                                "x": 570,
-                                "y": -105,
-                                "rx": 195,
-                                "ry": 65,
-                                "tail": [630, -320],
-                                "dark_mode": True,
-                                "font_size": 21,
-                            }
-                        ],
-                        "gutter_text": "Để phân định cao thấp trước điện rồng...\nCả hai vị thần lập tức thi triển đại thần thông!",
-                    },
-                    {
-                        "panel_index": 3,
-                        "scene_title": "Tỷ Thí Đại Thần Thông",
-                        "characters_present": ["son_tinh", "thuy_tinh"],
-                        "image_prompt": "Sơn Tinh summoning golden jade pillars vs Thủy Tinh summoning cyan water dragons in palace courtyard.",
-                        "narrations": [
-                            {
-                                "text": "Thủy Tinh hô gió gọi mưa, triệu hồi Thủy Long rung chuyển đất trời.\nSơn Tinh vẫy tay dựng vách ngọc, dời non chặn đứng cuồng phong!",
-                                "x": 400,
-                                "y": 95,
-                                "w": 710,
                                 "h": 95,
                                 "border_color": [250, 204, 21, 235],
                                 "text_color": [254, 249, 195, 255],
                                 "font_size": 20,
                             }
                         ],
+                        "sfx": [],
+                        "bubbles": [
+                            {
+                                "text": "Làm sao con khóc?\nHãy nhìn vào trong giỏ xem còn gì không...",
+                                "x": 270,
+                                "y": 320,
+                                "rx": 245,
+                                "ry": 70,
+                                "tail": [430, 250],
+                                "dark_mode": False,
+                                "font_size": 21,
+                            },
+                            {
+                                "text": "Chị Cám lừa trút hết tép của con rồi...\nChỉ còn duy nhất một con cá Bống nhỏ!",
+                                "x": 400,
+                                "y": -95,
+                                "rx": 275,
+                                "ry": 72,
+                                "tail": [320, -280],
+                                "dark_mode": False,
+                                "font_size": 21,
+                            },
+                        ],
+                        "gutter_text": "Mẹ con Cám nhẫn tâm giết cả cá Bống rồi trộn thóc với gạo bắt Tấm nhặt\nđể ngăn nàng đi trẩy hội kinh thành... Nhưng phép màu một lần nữa giáng lâm!",
+                    },
+                    {
+                        "panel_index": 2,
+                        "scene_title": "Đàn Chim Sẻ Thần & Đôi Hài Kim Phượng",
+                        "characters_present": ["tam"],
+                        "image_prompt": "Flock of glowing golden sparrows sorting rice as golden phoenix silk slippers materialize before Tấm.",
+                        "narrations": [
+                            {
+                                "text": "Ông Bụt gọi vạn cánh chim sẻ xuống nhặt thóc giúp Tấm,\nrồi từ tro cốt cá Bống hóa ra y phục lụa tiên và Đôi Hài Kim Phượng!",
+                                "x": 400,
+                                "y": 95,
+                                "w": 710,
+                                "h": 95,
+                                "border_color": [250, 204, 21, 240],
+                                "text_color": [254, 249, 195, 255],
+                                "font_size": 20,
+                            }
+                        ],
                         "sfx": [
                             {
-                                "text": "ẦMMM—!!",
-                                "x": 410,
-                                "y": -110,
-                                "font_size": 56,
-                                "color": [103, 232, 249, 255],
-                                "glow_color": [37, 99, 235, 255],
+                                "text": "LẤP LÁNH!!",
+                                "x": 540,
+                                "y": 650,
+                                "font_size": 44,
+                                "color": [253, 224, 71, 255],
+                                "glow_color": [234, 179, 8, 255],
                                 "angle": -8,
                             }
                         ],
-                        "bubbles": [],
-                        "gutter_text": "Kẻ tám lạng, người nửa cân! Cả hai đều mang sức mạnh kinh thiên động địa.\nVua Hùng đành đưa ra một thử thách cuối cùng...",
+                        "bubbles": [
+                            {
+                                "text": "Đôi hài thêu chỉ vàng đẹp quá...\nCon có thể đến kinh thành dự hội rồi!",
+                                "x": 275,
+                                "y": -95,
+                                "rx": 255,
+                                "ry": 70,
+                                "tail": [330, -350],
+                                "dark_mode": False,
+                                "font_size": 21,
+                            }
+                        ],
+                        "gutter_text": "Trên đường trẩy hội qua cầu, Tấm vô tình đánh rơi một chiếc hài xuống suối...\nCũng chính là lúc đoàn ngự giá của Quốc Vương trẻ tuổi đi ngang qua!",
                     },
                     {
-                        "panel_index": 4,
-                        "scene_title": "Thách Cưới Tam Linh Thú",
-                        "characters_present": ["hung_vuong"],
-                        "image_prompt": "King Hùng Vương raising golden dragon scepter with glowing visions of Nine-Tusked Elephant, Nine-Spurred Rooster, Nine-Maned Horse.",
+                        "panel_index": 3,
+                        "scene_title": "Quốc Vương Nhặt Chiếc Hài Vàng",
+                        "characters_present": ["hoang_tu"],
+                        "image_prompt": "Handsome young Vietnamese King holding up a glowing golden phoenix silk slipper beside his white warhorse.",
                         "narrations": [
                             {
-                                "text": "[THÁNH CHỈ THÁCH CƯỚI]\nVoi chín ngà • Gà chín cựa • Ngựa chín hồng mao!",
+                                "text": "Voi ngựa ngự giá bỗng dừng bước trước hào quang tỏa ra từ dòng suối...",
                                 "x": 400,
                                 "y": 85,
-                                "w": 640,
-                                "h": 92,
-                                "border_color": [250, 204, 21, 255],
-                                "text_color": [254, 240, 138, 255],
-                                "font_size": 22,
+                                "w": 690,
+                                "h": 80,
+                                "border_color": [250, 204, 21, 235],
+                                "text_color": [254, 249, 195, 255],
+                                "font_size": 20,
                             }
                         ],
                         "sfx": [],
                         "bubbles": [
                             {
-                                "text": "Ngày mai, ai mang đủ sính lễ Tam Linh Thú\nđến trước sẽ được rước Mị Nương về dinh!",
+                                "text": "Chiếc hài thêu chỉ vàng tinh xảo nhường này,\nchủ nhân của nó ắt hẳn là bậc giai nhân tuyệt sắc!",
+                                "x": 290,
+                                "y": 210,
+                                "rx": 275,
+                                "ry": 72,
+                                "tail": [410, 320],
+                                "dark_mode": False,
+                                "font_size": 20,
+                            },
+                            {
+                                "text": "Truyền lệnh khắp kinh thành: Hễ cô gái nào\nướm vừa chiếc hài này, trẫm sẽ lập làm Hoàng Hậu!",
+                                "x": 400,
+                                "y": -95,
+                                "rx": 295,
+                                "ry": 74,
+                                "tail": [450, -320],
+                                "dark_mode": False,
+                                "font_size": 20,
+                            },
+                        ],
+                        "gutter_text": "Hàng ngàn tiểu thư quyền quý và cả Cám đều cố ướm thử nhưng vô vọng.\nCho đến khi Tấm bước ra...",
+                    },
+                    {
+                        "panel_index": 4,
+                        "scene_title": "Chân Tình Ướm Vừa Hài Phượng",
+                        "characters_present": ["tam", "hoang_tu", "cam", "di_ghe"],
+                        "image_prompt": "Handsome King kneeling to fit the glowing golden slipper onto Tấm's foot while Cám and Stepmother watch in shocked envy.",
+                        "narrations": [
+                            {
+                                "text": "Khoảnh khắc bàn chân Tấm chạm vào chiếc hài, kim quang bừng sáng!\nĐôi hài vừa như in, định sẵn duyên phận Đế - Hậu!",
+                                "x": 400,
+                                "y": 95,
+                                "w": 690,
+                                "h": 95,
+                                "border_color": [250, 204, 21, 245],
+                                "text_color": [254, 249, 195, 255],
+                                "font_size": 20,
+                            }
+                        ],
+                        "sfx": [],
+                        "bubbles": [
+                            {
+                                "text": "Cuối cùng trẫm cũng tìm thấy nàng!\nHãy theo trẫm về cung làm Hoàng Hậu!",
+                                "x": 270,
+                                "y": -95,
+                                "rx": 255,
+                                "ry": 70,
+                                "tail": [320, -360],
+                                "dark_mode": False,
+                                "font_size": 20,
+                            }
+                        ],
+                        "gutter_text": "",
+                    },
+                ],
+            },
+            # ==================================================================
+            # CHƯƠNG 2: ÂM MƯU NGÀY GIỖ CHA & SỰ HÓA THÂN BẤT DIỆT
+            # ==================================================================
+            {
+                "chapter_index": 2,
+                "chapter_title": "CHƯƠNG 2: ÂM MƯU NGÀY GIỖ CHA & SỰ HÓA THÂN BẤT DIỆT",
+                "footer_title": "— HẾT CHƯƠNG 2: ĐÓN ĐỌC CHƯƠNG 3 - PHƯỢNG HOÀNG NIẾT BÀN —",
+                "panels": [
+                    {
+                        "panel_index": 1,
+                        "scene_title": "Tội Ác Dưới Gốc Cây Cau",
+                        "characters_present": ["tam", "cam", "di_ghe"],
+                        "image_prompt": "Stepmother and Cám chopping the base of a tall swaying areca palm tree in a storm while Tấm clings to the top.",
+                        "narrations": [
+                            {
+                                "text": "[NGÀY GIỖ CHA]\nTấm hiếu thảo xin phép về quê làm giỗ cha, nào ngờ rơi vào bẫy tử thần!",
+                                "x": 400,
+                                "y": 90,
+                                "w": 690,
+                                "h": 92,
+                                "border_color": [239, 68, 68, 240],
+                                "text_color": [254, 226, 226, 255],
+                                "font_size": 20,
+                            }
+                        ],
+                        "sfx": [
+                            {
+                                "text": "PHẬP! RẮC!!",
+                                "x": 480,
+                                "y": 640,
+                                "font_size": 52,
+                                "color": [254, 202, 202, 255],
+                                "glow_color": [220, 38, 38, 255],
+                                "angle": -10,
+                            }
+                        ],
+                        "bubbles": [
+                            {
+                                "text": "Dì ơi! Chị Cám ơi! Sao lại chặt gốc cau?!",
+                                "x": 240,
+                                "y": 230,
+                                "rx": 225,
+                                "ry": 64,
+                                "tail": [390, 180],
+                                "dark_mode": False,
+                                "font_size": 20,
+                            },
+                            {
+                                "text": "Chị Tấm cứ chết đi!\nNgôi Hoàng Hậu từ nay sẽ thuộc về Cám!!",
+                                "x": 400,
+                                "y": -95,
+                                "rx": 265,
+                                "ry": 72,
+                                "tail": [520, -320],
+                                "dark_mode": True,
+                                "font_size": 21,
+                            },
+                        ],
+                        "gutter_text": "Dì Ghẻ đưa Cám vào cung thế chỗ... Nhưng chân hồn của Tấm bất diệt,\nhóa thành chim Vàng Anh bay thẳng về hoàng cung!",
+                    },
+                    {
+                        "panel_index": 2,
+                        "scene_title": "Linh Hồn Chim Vàng Anh",
+                        "characters_present": ["hoang_tu", "tam", "cam"],
+                        "image_prompt": "Young King holding out his hand as a glowing golden Oriole bird lands with Tấm's spiritual silhouette behind it.",
+                        "narrations": [],
+                        "sfx": [],
+                        "bubbles": [
+                            {
+                                "text": "Vàng ảnh vàng anh, có phải vợ anh\nchui vào tay áo...",
+                                "x": 270,
+                                "y": 100,
+                                "rx": 245,
+                                "ry": 70,
+                                "tail": [360, 290],
+                                "dark_mode": False,
+                                "font_size": 21,
+                            },
+                            {
+                                "text": "Không thể nào... Con chim đó\nmang linh hồn của chị Tấm sao?!",
+                                "x": 520,
+                                "y": -95,
+                                "rx": 240,
+                                "ry": 70,
+                                "tail": [650, -340],
+                                "dark_mode": True,
+                                "font_size": 20,
+                            },
+                        ],
+                        "gutter_text": "Mẹ con Cám điên cuồng sát hại Vàng Anh, chặt cây Xoan Đào, đốt cả khung cửi...\nNhưng từ đống tro tàn, một cây Thị thần kỳ vươn lên giữa trời đất!",
+                    },
+                    {
+                        "panel_index": 3,
+                        "scene_title": "Quả Thị Vàng & Bà Lão Hàng Nước",
+                        "characters_present": ["tam"],
+                        "image_prompt": "Glowing golden persimmon fruit dropping into the woven bag of a kind elderly village woman.",
+                        "narrations": [
+                            {
+                                "text": "Từ giọt máu và tro tàn của khung cửi,\nkết thành một quả Thị vàng rực tỏa hương thơm ngát khắp vùng!",
+                                "x": 400,
+                                "y": 95,
+                                "w": 680,
+                                "h": 95,
+                                "border_color": [250, 204, 21, 240],
+                                "text_color": [254, 249, 195, 255],
+                                "font_size": 20,
+                            }
+                        ],
+                        "sfx": [],
+                        "bubbles": [
+                            {
+                                "text": "Thị ơi thị rụng bị bà,\nBà để bà ngửi chứ bà không ăn...",
+                                "x": 380,
+                                "y": -95,
+                                "rx": 265,
+                                "ry": 72,
+                                "tail": [430, -330],
+                                "dark_mode": False,
+                                "font_size": 21,
+                            }
+                        ],
+                        "gutter_text": "Hàng ngày Tấm từ quả Thị bước ra giúp bà lão dọn nhà và têm trầu cánh phượng.\nCho đến một ngày, Quốc Vương dừng chân ghé quán nước...",
+                    },
+                    {
+                        "panel_index": 4,
+                        "scene_title": "Miếng Trầu Cánh Phượng & Ngày Trùng Phùng",
+                        "characters_present": ["tam", "hoang_tu"],
+                        "image_prompt": "Tấm stepping out of golden aura with phoenix-wing betel leaves as the young King embraces her with tears of joy.",
+                        "narrations": [
+                            {
+                                "text": "Nhìn miếng trầu têm cánh phượng quen thuộc, trái tim nhà Vua run lên!\nKhi Tấm bước ra trong ánh hào quang, đôi uyên ương vỡ òa trùng phùng!",
+                                "x": 400,
+                                "y": 95,
+                                "w": 710,
+                                "h": 95,
+                                "border_color": [250, 204, 21, 245],
+                                "text_color": [254, 249, 195, 255],
+                                "font_size": 20,
+                            }
+                        ],
+                        "sfx": [],
+                        "bubbles": [
+                            {
+                                "text": "Tấm! Đúng là nàng rồi!\nTrẫm thề không bao giờ để ai hãm hại nàng nữa!",
                                 "x": 400,
                                 "y": -95,
                                 "rx": 280,
                                 "ry": 72,
-                                "tail": [430, -340],
+                                "tail": [420, -380],
                                 "dark_mode": False,
                                 "font_size": 21,
                             }
@@ -261,26 +431,131 @@ def seed_son_tinh_thuy_tinh_full_series():
                 ],
             },
             # ==================================================================
-            # CHƯƠNG 2: SÍNH LỄ THẦN KỲ & CƠN THỊNH NỘ BIỂN ĐÔNG
+            # CHƯƠNG 3: PHƯỢNG HOÀNG TRỞ LẠI & SỰ PHÁN XỬ CUỐI CÙNG
             # ==================================================================
             {
-                "chapter_index": 2,
-                "chapter_title": "CHƯƠNG 2: SÍNH LỄ THẦN KỲ & CƠN THỊNH NỘ BIỂN ĐÔNG",
-                "footer_title": "— HẾT CHƯƠNG 2: ĐÓN ĐỌC CHƯƠNG 3 - ĐẠI CHIẾN DỜI NON LẤP BIỂN —",
+                "chapter_index": 3,
+                "chapter_title": "CHƯƠNG 3: PHƯỢNG HOÀNG TRỞ LẠI & PHÁN XỬ CUỐI CÙNG",
+                "footer_title": "— ĐẠI KẾT CỤC: TRỌN BỘ TẤM CÁM - PHƯỢNG HOÀNG NIẾT BÀN —",
                 "panels": [
                     {
                         "panel_index": 1,
-                        "scene_title": "Sơn Tinh Dâng Tam Linh Thú",
-                        "characters_present": ["son_tinh"],
-                        "image_prompt": "Sơn Tinh at golden dawn before Phong Châu gates leading Nine-Tusked Elephant, Nine-Spurred Rooster, Nine-Maned Red Horse.",
+                        "scene_title": "Hoàng Hậu Tấm Uy Nghi Hồi Cung",
+                        "characters_present": ["tam", "hoang_tu"],
+                        "image_prompt": "Empress Tấm in crimson-and-gold phoenix robes walking hand-in-hand with the young King up the grand palace staircase.",
                         "narrations": [
                             {
-                                "text": "[CANH NĂM SÁNG HÔM SAU - CỔNG THÀNH PHONG CHÂU]\nKhi sương sớm còn chưa tan, Sơn Tinh đã dẫn Tam Linh Thú tiến vào thành!",
+                                "text": "[ĐẠI ĐIỆN HOÀNG CUNG]\nTrải qua muôn trùng sinh tử, Phượng Hoàng tái sinh càng thêm rực rỡ uy quyền!",
+                                "x": 400,
+                                "y": 95,
+                                "w": 700,
+                                "h": 95,
+                                "border_color": [250, 204, 21, 245],
+                                "text_color": [254, 249, 195, 255],
+                                "font_size": 20,
+                            }
+                        ],
+                        "sfx": [],
+                        "bubbles": [
+                            {
+                                "text": "Cung nghinh Hoàng Hậu nương nương hồi cung!\nVạn tuế! Vạn vạn tuế!",
+                                "x": 400,
+                                "y": -95,
+                                "rx": 275,
+                                "ry": 72,
+                                "tail": [260, -280],
+                                "dark_mode": False,
+                                "font_size": 21,
+                            }
+                        ],
+                        "gutter_text": "Trước dung nhan tuyệt mỹ như tiên giáng trần của Tấm,\nCám vừa khiếp sợ vừa bị lòng đố kỵ làm cho mờ mắt...",
+                    },
+                    {
+                        "panel_index": 2,
+                        "scene_title": "Lời Phán Từ Ngai Vàng Phượng Hoàng",
+                        "characters_present": ["tam", "cam"],
+                        "image_prompt": "Empress Tấm looking down serenely from her golden phoenix throne while Cám kneels trembling below.",
+                        "narrations": [],
+                        "sfx": [],
+                        "bubbles": [
+                            {
+                                "text": "Chị Tấm ơi... Chị làm thế nào\nmà trắng trẻo đẹp đẽ hơn xưa thế?!",
+                                "x": 270,
+                                "y": -100,
+                                "rx": 250,
+                                "ry": 72,
+                                "tail": [360, -290],
+                                "dark_mode": True,
+                                "font_size": 21,
+                            },
+                            {
+                                "text": "Em có muốn đẹp không,\nđể chị bảo quân hầu giúp em?",
+                                "x": 480,
+                                "y": 110,
+                                "rx": 235,
+                                "ry": 68,
+                                "tail": [420, 290],
+                                "dark_mode": False,
+                                "font_size": 21,
+                            },
+                        ],
+                        "gutter_text": "Lòng tham và sự đố kỵ mù quáng đã tự dẫn lối cho kẻ ác\nbước vào cái hố nhân quả do chính mình đào nên!",
+                    },
+                    {
+                        "panel_index": 3,
+                        "scene_title": "Nhân Quả Nhãn Tiền",
+                        "characters_present": ["cam", "di_ghe"],
+                        "image_prompt": "Cám inside a deep stone pit shrouded in steam and karma flames while the Stepmother collapses in horror above.",
+                        "narrations": [
+                            {
+                                "text": "[THIÊN ĐẠO LUÂN HỒI - ÁC GIẢ ÁC BÁO]\nKẻ năm xưa năm lần bảy lượt đoạt mạng người hiền,\nnay tự mình nhận lấy kết cục bi thảm!",
+                                "x": 400,
+                                "y": 95,
+                                "w": 680,
+                                "h": 98,
+                                "border_color": [168, 85, 247, 240],
+                                "text_color": [243, 232, 255, 255],
+                                "font_size": 20,
+                            }
+                        ],
+                        "sfx": [
+                            {
+                                "text": "ẦMMM!!",
+                                "x": 540,
+                                "y": 640,
+                                "font_size": 52,
+                                "color": [216, 180, 254, 255],
+                                "glow_color": [126, 34, 206, 255],
+                                "angle": -10,
+                            }
+                        ],
+                        "bubbles": [
+                            {
+                                "text": "Không... Cám con tôi!!\nBáo ứng... tất cả là báo ứng rồi!!",
+                                "x": 400,
+                                "y": -95,
+                                "rx": 260,
+                                "ry": 72,
+                                "tail": [410, -450],
+                                "dark_mode": True,
+                                "font_size": 21,
+                            }
+                        ],
+                        "gutter_text": "Khép lại những tháng ngày bão giông và oán hận...\nÁnh mặt trời bình yên một lần nữa tỏa rạng khắp kinh kỳ!",
+                    },
+                    {
+                        "panel_index": 4,
+                        "scene_title": "Đại Kết Cục: Long Phượng Hòa Minh",
+                        "characters_present": ["tam", "hoang_tu"],
+                        "image_prompt": "The young Dragon King and Empress Tấm standing together on high imperial balcony at golden sunrise with soaring Golden Dragon and Phoenix.",
+                        "narrations": [
+                            {
+                                "text": "Từ đó, Hoàng Hậu Tấm cùng Quốc Vương trị vì đất nước muôn dân ấm no.\nỞ hiền gặp lành — chân lý ngàn đời vẫn mãi tỏa sáng!",
                                 "x": 400,
                                 "y": 95,
                                 "w": 710,
                                 "h": 95,
-                                "border_color": [250, 204, 21, 240],
+                                "border_color": [250, 204, 21, 245],
                                 "text_color": [254, 249, 195, 255],
                                 "font_size": 20,
                             }
@@ -288,355 +563,12 @@ def seed_son_tinh_thuy_tinh_full_series():
                         "sfx": [],
                         "bubbles": [
                             {
-                                "text": "Bẩm Quốc Vương! Sơn Tinh đã mang đủ\nVoi chín ngà, Gà chín cựa, Ngựa chín hồng mao\nđến nghinh đón Công chúa!",
+                                "text": "Bình minh lên rồi...\nGiang sơn này và trái tim trẫm mãi mãi thuộc về nàng!",
                                 "x": 400,
-                                "y": -100,
+                                "y": -95,
                                 "rx": 285,
-                                "ry": 82,
-                                "tail": [420, -360],
-                                "dark_mode": False,
-                                "font_size": 21,
-                            }
-                        ],
-                        "gutter_text": "Giữ đúng lời hứa vàng ngọc của bậc quân vương,\nVua Hùng bằng lòng cho Sơn Tinh rước Mị Nương về núi Tản Viên!",
-                    },
-                    {
-                        "panel_index": 2,
-                        "scene_title": "Rước Nàng Về Dinh Núi Tản",
-                        "characters_present": ["son_tinh", "mi_nuong"],
-                        "image_prompt": "Romantic shot of Sơn Tinh holding Princess Mị Nương's hand on mountain path with floating blossoms.",
-                        "narrations": [],
-                        "sfx": [],
-                        "bubbles": [
-                            {
-                                "text": "Từ nay núi Tản Viên sẽ là nhà của nàng.\nTa thề dùng cả sinh mệnh bảo vệ nàng bình yên!",
-                                "x": 280,
-                                "y": 100,
-                                "rx": 255,
                                 "ry": 72,
-                                "tail": [390, 260],
-                                "dark_mode": False,
-                                "font_size": 20,
-                            },
-                            {
-                                "text": "Thiếp nguyện cùng chàng\nđi đến chân trời góc bể...",
-                                "x": 540,
-                                "y": -100,
-                                "rx": 205,
-                                "ry": 65,
-                                "tail": [620, -380],
-                                "dark_mode": False,
-                                "font_size": 21,
-                            },
-                        ],
-                        "gutter_text": "Thế nhưng... đúng lúc đoàn rước dâu vừa khuất bóng sau rặng núi,\nmột kẻ đến muộn đã đặt chân tới cổng thành Phong Châu!",
-                    },
-                    {
-                        "panel_index": 3,
-                        "scene_title": "Cơn Thịnh Nộ Của Kẻ Đến Muộn",
-                        "characters_present": ["thuy_tinh"],
-                        "image_prompt": "Close-up of Thủy Tinh before closed gates of Phong Châu, eyes exploding with cyan-crimson rage shattering the stone floor.",
-                        "narrations": [
-                            {
-                                "text": "Đến muộn chỉ một khắc... Cổng thành đã khép, người thương đã thuộc về kẻ khác!",
-                                "x": 400,
-                                "y": 90,
-                                "w": 700,
-                                "h": 88,
-                                "border_color": [56, 189, 248, 240],
-                                "text_color": [224, 242, 254, 255],
-                                "font_size": 20,
-                            }
-                        ],
-                        "sfx": [
-                            {
-                                "text": "RẮC RẦMMM!!",
-                                "x": 520,
-                                "y": 860,
-                                "font_size": 52,
-                                "color": [103, 232, 249, 255],
-                                "glow_color": [37, 99, 235, 255],
-                                "angle": -10,
-                            }
-                        ],
-                        "bubbles": [
-                            {
-                                "text": "SƠN TINH!! Ngươi dám cướp Mị Nương\ncủa ta sao?!",
-                                "x": 285,
-                                "y": -95,
-                                "rx": 245,
-                                "ry": 68,
-                                "tail": [430, -450],
-                                "dark_mode": True,
-                                "font_size": 21,
-                            }
-                        ],
-                        "gutter_text": "Uất hận ngút trời! Thủy Tinh hóa giải phong ấn biển sâu,\ntriệu hồi đại quân thủy tộc truy sát đoàn rước dâu!",
-                    },
-                    {
-                        "panel_index": 4,
-                        "scene_title": "Hiệu Lệnh Vạn Quân Thủy Tộc",
-                        "characters_present": ["thuy_tinh"],
-                        "image_prompt": "Thủy Tinh floating in stormy sky raising lightning trident commanding giant sea serpents, krakens, and abyssal water army.",
-                        "narrations": [
-                            {
-                                "text": "[THỦY THẦN HIỆU LỆNH: VẠN HẢI TRIỀU DÂNG!]",
-                                "x": 400,
-                                "y": 85,
-                                "w": 580,
-                                "h": 76,
-                                "border_color": [56, 189, 248, 255],
-                                "text_color": [165, 243, 252, 255],
-                                "font_size": 22,
-                            }
-                        ],
-                        "sfx": [
-                            {
-                                "text": "CUỘN TRÀO!!",
-                                "x": 240,
-                                "y": 630,
-                                "font_size": 50,
-                                "color": [103, 232, 249, 255],
-                                "glow_color": [2, 132, 199, 255],
-                                "angle": 8,
-                            }
-                        ],
-                        "bubbles": [
-                            {
-                                "text": "Hỡi vạn quân biển Đông!\nHãy dâng sóng thần nuốt chửng núi Tản Viên cho ta!!",
-                                "x": 400,
-                                "y": -95,
-                                "rx": 290,
-                                "ry": 72,
-                                "tail": [460, -550],
-                                "dark_mode": True,
-                                "font_size": 21,
-                            }
-                        ],
-                        "gutter_text": "",
-                    },
-                ],
-            },
-            # ==================================================================
-            # CHƯƠNG 3: ĐẠI CHIẾN DỜI NON LẤP BIỂN & HỒI KẾT NGHÌN NĂM
-            # ==================================================================
-            {
-                "chapter_index": 3,
-                "chapter_title": "CHƯƠNG 3: ĐẠI CHIẾN DỜI NON LẤP BIỂN & HỒI KẾT NGHÌN NĂM",
-                "footer_title": "— ĐẠI KẾT CỤC: TRỌN BỘ SƠN TINH - THỦY TINH —",
-                "panels": [
-                    {
-                        "panel_index": 1,
-                        "scene_title": "Đại Hồng Thủy Ập Tới",
-                        "characters_present": ["son_tinh", "thuy_tinh"],
-                        "image_prompt": "Ancient Vietnamese royal citadel Phong Chau overshadowed by a colossal black-and-cyan tsunami wave and lightning vortex.",
-                        "narrations": [
-                            {
-                                "text": "[ĐƯỜNG VỀ NÚI TẢN VIÊN]\nSóng thần cao hàng trăm trượng bất ngờ dựng đứng phía chân trời!",
-                                "x": 400,
-                                "y": 95,
-                                "w": 690,
-                                "h": 95,
-                                "border_color": [56, 189, 248, 235],
-                                "text_color": [240, 249, 255, 255],
-                                "font_size": 21,
-                            },
-                            {
-                                "text": "Mưa đổ như trút nước, sấm chớp rạch ngang bầu trời.\nCả vùng đồng bằng phút chốc chìm trong biển nước mênh mông!",
-                                "x": 400,
-                                "y": -95,
-                                "w": 690,
-                                "h": 95,
-                                "border_color": [250, 204, 21, 235],
-                                "text_color": [254, 249, 195, 255],
-                                "font_size": 21,
-                            },
-                        ],
-                        "sfx": [
-                            {
-                                "text": "ẦM ĐOÀNGGG!!",
-                                "x": 280,
-                                "y": 460,
-                                "font_size": 52,
-                                "color": [103, 232, 249, 255],
-                                "glow_color": [2, 132, 199, 255],
-                                "angle": -10,
-                            }
-                        ],
-                        "bubbles": [],
-                        "gutter_text": "Giữa tâm bão tối tăm mù mịt...\nThủy Tinh cưỡi Giao Long khổng lồ xuất hiện!",
-                    },
-                    {
-                        "panel_index": 2,
-                        "scene_title": "Thủy Tinh Cưỡi Giao Long",
-                        "characters_present": ["thuy_tinh"],
-                        "image_prompt": "Thủy Tinh in abyssal dragon armor standing atop a roaring sea dragon holding a lightning trident.",
-                        "narrations": [],
-                        "sfx": [
-                            {
-                                "text": "GÀOOOO—!!",
-                                "x": 230,
-                                "y": 760,
-                                "font_size": 52,
-                                "color": [165, 243, 252, 255],
-                                "glow_color": [37, 99, 235, 255],
-                                "angle": 8,
-                            }
-                        ],
-                        "bubbles": [
-                            {
-                                "text": "SƠN TINH!!\nGiao Mị Nương ra đây!!",
-                                "x": 235,
-                                "y": 115,
-                                "rx": 195,
-                                "ry": 66,
-                                "tail": [400, 290],
-                                "dark_mode": True,
-                                "font_size": 23,
-                            },
-                            {
-                                "text": "Bằng không, ta sẽ nhấn chìm cả giang sơn này\nxuống đáy biển sâu!!",
-                                "x": 510,
-                                "y": -110,
-                                "rx": 245,
-                                "ry": 78,
-                                "tail": [455, -340],
-                                "dark_mode": True,
-                                "font_size": 21,
-                            },
-                        ],
-                        "gutter_text": "Trước cơn thịnh nộ muốn hủy diệt bách tính của Thủy Tinh...\nThánh Tản Viên bước lên vách đá, ánh mắt rực sáng kim quang!",
-                    },
-                    {
-                        "panel_index": 3,
-                        "scene_title": "Sơn Tinh Kích Hoạt Thần Trận",
-                        "characters_present": ["son_tinh"],
-                        "image_prompt": "Sơn Tinh in Dong Son bronze sun armor kneeling on a cliff slamming his glowing golden hand into a runic circle cracking the earth.",
-                        "narrations": [
-                            {
-                                "text": "[THẦN THÔNG THỨC TỈNH: THÁI SƠN DI NHẠC TRẬN!]",
-                                "x": 400,
-                                "y": -85,
-                                "w": 630,
-                                "h": 76,
-                                "border_color": [250, 204, 21, 255],
-                                "text_color": [254, 240, 138, 255],
-                                "font_size": 22,
-                            }
-                        ],
-                        "sfx": [
-                            {
-                                "text": "RẦMMM!!",
-                                "x": 205,
-                                "y": 825,
-                                "font_size": 52,
-                                "color": [253, 224, 71, 255],
-                                "glow_color": [217, 119, 6, 255],
-                                "angle": -10,
-                            }
-                        ],
-                        "bubbles": [
-                            {
-                                "text": "Thủy Tinh! Ngươi vì tư tình\nmà gieo tai ương cho muôn dân...",
-                                "x": 230,
-                                "y": 100,
-                                "rx": 215,
-                                "ry": 66,
-                                "tail": [390, 240],
-                                "dark_mode": False,
-                                "font_size": 21,
-                            },
-                            {
-                                "text": "Nước của ngươi dâng cao một trượng,\nNÚI CỦA TA SẼ VƯƠN CAO MƯỜI TRƯỢNG!",
-                                "x": 555,
-                                "y": 530,
-                                "rx": 225,
-                                "ry": 74,
-                                "tail": [490, 350],
-                                "dark_mode": False,
-                                "font_size": 20,
-                            },
-                        ],
-                        "gutter_text": "Đại địa chấn động! Hồn thiêng sông núi Lạc Việt thức giấc!",
-                    },
-                    {
-                        "panel_index": 4,
-                        "scene_title": "Đại Chiến Dời Non Lấp Biển",
-                        "characters_present": ["son_tinh", "thuy_tinh"],
-                        "image_prompt": "Colossal golden rune mountain peaks erupting upward to block a monstrous dark tsunami wave and sea-serpent.",
-                        "narrations": [
-                            {
-                                "text": "Hàng vạn dãy núi đá khắc cổ tự Đông Sơn phá đất vươn lên,\nhóa thành bức tường thành bất khả xâm phạm!",
-                                "x": 380,
-                                "y": 100,
-                                "w": 680,
-                                "h": 95,
-                                "border_color": [250, 204, 21, 240],
-                                "text_color": [255, 251, 235, 255],
-                                "font_size": 21,
-                            }
-                        ],
-                        "sfx": [
-                            {
-                                "text": "ĐOÀNGGG—!!",
-                                "x": 450,
-                                "y": 730,
-                                "font_size": 62,
-                                "color": [254, 240, 138, 255],
-                                "glow_color": [234, 88, 12, 255],
-                                "angle": -12,
-                            }
-                        ],
-                        "bubbles": [
-                            {
-                                "text": "KHÔNG THỂ NÀO!!\nSức mạnh của đại địa...!!",
-                                "x": 225,
-                                "y": -110,
-                                "rx": 200,
-                                "ry": 66,
-                                "tail": [290, -450],
-                                "dark_mode": True,
-                                "font_size": 22,
-                            }
-                        ],
-                        "gutter_text": "Cuộc đại chiến kéo dài suốt nhiều ngày đêm...\nCuối cùng, thủy triều kiệt sức phải rút về biển Đông.",
-                    },
-                    {
-                        "panel_index": 5,
-                        "scene_title": "Bình Minh Trên Đỉnh Tản Viên",
-                        "characters_present": ["son_tinh"],
-                        "image_prompt": "Heroic back-view of Sơn Tinh standing on the highest peak of Mount Tản Viên at golden sunrise looking over the valley and receding ocean.",
-                        "narrations": [
-                            {
-                                "text": "Ánh bình minh chiếu rạng non sông Văn Lang.\nNhưng oán hận của Thủy Tinh vẫn chưa bao giờ dập tắt...",
-                                "x": 400,
-                                "y": 100,
-                                "w": 670,
-                                "h": 95,
-                                "border_color": [250, 204, 21, 235],
-                                "text_color": [254, 249, 195, 255],
-                                "font_size": 21,
-                            },
-                            {
-                                "text": "Mỗi năm, khi mùa mưa bão kéo về, trận chiến giữa Núi và Biển\nlại một lần nữa tái diễn!",
-                                "x": 400,
-                                "y": -95,
-                                "w": 670,
-                                "h": 95,
-                                "border_color": [56, 189, 248, 235],
-                                "text_color": [224, 242, 254, 255],
-                                "font_size": 21,
-                            },
-                        ],
-                        "sfx": [],
-                        "bubbles": [
-                            {
-                                "text": "Dù ngươi có quay lại bao nhiêu lần...\nTản Viên Sơn vẫn sẽ bảo vệ mảnh đất này!",
-                                "x": 270,
-                                "y": 350,
-                                "rx": 240,
-                                "ry": 72,
-                                "tail": [450, 480],
+                                "tail": [410, -360],
                                 "dark_mode": False,
                                 "font_size": 21,
                             }
@@ -653,23 +585,21 @@ def seed_son_tinh_thuy_tinh_full_series():
 
     res = render_project(proj_id)
 
-    # Copy toàn bộ ảnh sang ARTIFACT_DIR để hiển thị trực tiếp trong Artifact cho người dùng
+    # Copy sang ARTIFACT_DIR để hiển thị trực tiếp trong Artifact cho người dùng
     for cid in char_files:
         shutil.copyfile(
             os.path.join(proj_dir, f"char_{cid}_sheet.jpg"),
-            os.path.join(ARTIFACT_DIR, f"char_{cid}_sheet.jpg"),
+            os.path.join(ARTIFACT_DIR, f"tc_char_{cid}_sheet.jpg"),
         )
     for ch_idx in [1, 2, 3]:
-        p_count = 5 if ch_idx == 3 else 4
-        for p_idx in range(1, p_count + 1):
+        for p_idx in range(1, 5):
             shutil.copyfile(
                 os.path.join(proj_dir, f"ch{ch_idx}_panel_{p_idx}_typeset.jpg"),
-                os.path.join(ARTIFACT_DIR, f"sttt_ch{ch_idx}_p{p_idx}_typeset.jpg"),
+                os.path.join(ARTIFACT_DIR, f"tc_ch{ch_idx}_p{p_idx}_typeset.jpg"),
             )
 
-    print("Seeded FULL SERIES son_tinh_thuy_tinh:", res)
+    print("Seeded FULL SERIES tam_cam:", res)
 
 
 if __name__ == "__main__":
-    seed_son_tinh_thuy_tinh_full_series()
-    render_project("thach_sanh")
+    seed_tam_cam_full_series()
