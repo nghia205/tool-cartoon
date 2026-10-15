@@ -205,12 +205,12 @@ class StudioHandler(SimpleHTTPRequestHandler):
                 api_key = body.get("api_key", "").strip()
 
                 if api_key and body.get("save_key", True):
-                    save_env_key(provider, api_key)
+                    save_env_key("gemini" if provider.startswith("gemini") else provider, api_key)
                 elif not api_key:
                     env_keys = load_env_keys()
                     api_key = (
                         env_keys.get("GEMINI_API_KEY")
-                        if provider == "gemini"
+                        if provider.startswith("gemini")
                         else env_keys.get("OPENAI_API_KEY")
                     )
 

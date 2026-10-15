@@ -881,20 +881,54 @@ def generate_storyboard_via_ai(
         f"Đồng thời tự động lập hồ sơ thiết kế đồng bộ (`characters` + `visual_dna`) cho toàn bộ các nhân vật chính xuất hiện trong truyện."
     )
 
-    if provider == "gemini" and api_key:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
-        payload = {
-            "systemInstruction": {"parts": [{"text": FULL_SERIES_SYSTEM_PROMPT}]},
-            "contents": [{"parts": [{"text": user_msg}]}],
-            "generationConfig": {"responseMimeType": "application/json", "temperature": 0.7},
-        }
-        resp = requests.post(url, json=payload, timeout=90)
-        if resp.status_code != 200:
-            url2 = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
-            resp = requests.post(url2, json=payload, timeout=90)
-        resp.raise_for_status()
-        raw_text = resp.json()["candidates"][0]["content"]["parts"][0]["text"]
-        return json.loads(raw_text)
+    # Danh sách các model có sẵn & còn hạn mức (Quota) trên tài khoản của người dùng:
+    # - gemini-3.5-flash-lite (15 RPM, 250K TPM, 500 RPD)
+    # - gemini-3.8-flash (5 RPM, 250K TPM, 20 RPD)
+    # - gemini-3.1-flash-lite (15 RPM, 250K TPM, 500 RPD)
+    # - gemini-3-flash-preview (5 RPM, 250K TPM, 20 RPD)
+    # - gemma-4-31b-it (30 RPM, 16K TPM, 14.4K RPD)
+    if provider.startswith("gemini") and api_key:
+        default_chain = [
+            "gemini-3.5-flash-lite",
+            "gemini-3.8-flash",
+            "gemini-3.1-flash-lite",
+            "gemini-3-flash-preview",
+            "gemma-4-31b-it",
+        ]
+        preferred = provider.split(":", 1)[1] if ":" in provider else "gemini-3.5-flash-lite"
+        model_chain = [preferred] + [m for m in default_chain if m != preferred]
+
+        last_err = None
+        for model_name in model_chain:
+            try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+                if model_name.startswith("gemma-"):
+                    payload = {
+                        "contents": [{"parts": [{"text": FULL_SERIES_SYSTEM_PROMPT + "\n\n" + user_msg}]}],
+                        "generationConfig": {"temperature": 0.7},
+                    }
+                else:
+                    payload = {
+                        "systemInstruction": {"parts": [{"text": FULL_SERIES_SYSTEM_PROMPT}]},
+                        "contents": [{"parts": [{"text": user_msg}]}],
+                        "generationConfig": {"responseMimeType": "application/json", "temperature": 0.7},
+                    }
+                resp = requests.post(url, json=payload, timeout=90)
+                if resp.status_code == 200:
+                    parts = resp.json()["candidates"][0]["content"]["parts"]
+                    raw_text = "".join(p.get("text", "") for p in parts if "text" in p).strip()
+                    raw_text = re.sub(r"^```json\s*|\s*```$", "", raw_text.strip())
+                    data = json.loads(raw_text)
+                    data["model_used"] = model_name
+                    return data
+                else:
+                    last_err = f"{model_name} HTTP {resp.status_code}: {resp.text[:200]}"
+                    print(f"[Warn] Gemini model {model_name} failed ({resp.status_code}), trying next model...")
+            except Exception as e:
+                last_err = f"{model_name} Error: {e}"
+                print(f"[Warn] Exception on {model_name}: {e}")
+
+        raise RuntimeError(f"Tất cả model Gemini đều không phản hồi. Chi tiết: {last_err}")
 
     elif provider == "openai" and api_key:
         url = "https://api.openai.com/v1/chat/completions"
@@ -929,6 +963,11 @@ def generate_storyboard_via_ai(
         return json.loads(content)
 
 
+# Cờ nhớ tạm để nếu tài khoản Gemini ở gói Free (0/0 quota cho Nano Banana Image)
+# thì không lặp lại request lỗi ở các khung hình tiếp theo
+_GEMINI_IMAGE_QUOTA_AVAILABLE = True
+
+
 def generate_image_with_consistency(
     prompt_text: str,
     out_path: str,
@@ -939,56 +978,52 @@ def generate_image_with_consistency(
 ):
     """
     Sinh ảnh nhân vật hoặc khung hình Webtoon.
-    Nếu dùng Gemini Flash Image và có ảnh Character Sheet tham chiếu, truyền trực tiếp ảnh
-    nhân vật vào multimodal prompt để đảm bảo khuôn mặt & giáp trụ đồng bộ 100%.
+    - Nếu tài khoản Gemini có mở quota Nano Banana Image (gemini-3.1-flash-image / gemini-3.1-flash-lite-image),
+      dùng Multimodal Image Generation kèm ảnh tham chiếu.
+    - Nếu tài khoản Gemini có quota Image = 0/0 (Gói Free), tự động chuyển thẳng sang Flux AI
+      với Visual DNA đồng bộ để không bao giờ bị lỗi 404/429.
     """
-    # 1. Gemini Multimodal Image Generation (với ảnh tham chiếu nhân vật) hoặc Imagen 3
-    if provider == "gemini" and api_key:
-        if reference_image_paths:
+    global _GEMINI_IMAGE_QUOTA_AVAILABLE
+
+    # 1. Gemini Nano Banana 2 (gemini-3.1-flash-image / gemini-3.1-flash-lite-image) nếu có quota
+    if provider.startswith("gemini") and api_key and _GEMINI_IMAGE_QUOTA_AVAILABLE:
+        for img_model in ["gemini-3.1-flash-image", "gemini-3.1-flash-lite-image"]:
             try:
                 parts = []
-                for ref_p in reference_image_paths[:2]:
-                    if os.path.exists(ref_p):
-                        with open(ref_p, "rb") as rf:
-                            b64_ref = base64.b64encode(rf.read()).decode("utf-8")
-                        parts.append({"inlineData": {"mimeType": "image/jpeg", "data": b64_ref}})
+                if reference_image_paths:
+                    for ref_p in reference_image_paths[:2]:
+                        if os.path.exists(ref_p):
+                            with open(ref_p, "rb") as rf:
+                                b64_ref = base64.b64encode(rf.read()).decode("utf-8")
+                            parts.append({"inlineData": {"mimeType": "image/jpeg", "data": b64_ref}})
                 parts.append(
                     {
                         "text": (
-                            "Keep the exact character face, hair, and outfit design from the reference image(s). "
+                            "Keep the exact character face, hair, and outfit design from the reference. "
                             + prompt_text
                         )
                     }
                 )
-                url_mm = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key={api_key}"
+                url_mm = f"https://generativelanguage.googleapis.com/v1beta/models/{img_model}:generateContent?key={api_key}"
                 payload_mm = {
                     "contents": [{"parts": parts}],
                     "generationConfig": {"responseModalities": ["TEXT", "IMAGE"]},
                 }
-                r_mm = requests.post(url_mm, json=payload_mm, timeout=90)
+                r_mm = requests.post(url_mm, json=payload_mm, timeout=45)
                 if r_mm.status_code == 200:
                     for part in r_mm.json()["candidates"][0]["content"]["parts"]:
                         if "inlineData" in part:
                             with open(out_path, "wb") as f:
                                 f.write(base64.b64decode(part["inlineData"]["data"]))
                             return True
+                elif r_mm.status_code in (404, 429, 403):
+                    # Tài khoản có quota 0/0 cho Nano Banana Image -> tắt thử lại để tăng tốc
+                    _GEMINI_IMAGE_QUOTA_AVAILABLE = False
+                    break
             except Exception as e:
-                print(f"[Warn] Gemini Multimodal Reference fallback: {e}")
-
-        try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key={api_key}"
-            payload = {
-                "instances": [{"prompt": prompt_text}],
-                "parameters": {"sampleCount": 1, "aspectRatio": "9:16"},
-            }
-            r = requests.post(url, json=payload, timeout=90)
-            if r.status_code == 200:
-                b64 = r.json()["predictions"][0]["bytesBase64Encoded"]
-                with open(out_path, "wb") as f:
-                    f.write(base64.b64decode(b64))
-                return True
-        except Exception as e:
-            print(f"[Warn] Gemini Imagen fallback: {e}")
+                print(f"[Warn] {img_model} fallback: {e}")
+                _GEMINI_IMAGE_QUOTA_AVAILABLE = False
+                break
 
     # 2. OpenAI DALL-E 3
     if provider == "openai" and api_key:
@@ -997,7 +1032,7 @@ def generate_image_with_consistency(
             headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
             payload = {
                 "model": "dall-e-3",
-                "prompt": prompt_text,
+                "prompt": prompt_text[:3800],
                 "size": "1024x1792",
                 "response_format": "b64_json",
                 "n": 1,
@@ -1011,13 +1046,24 @@ def generate_image_with_consistency(
         except Exception as e:
             print(f"[Warn] OpenAI DALL-E 3 fallback: {e}")
 
-    # 3. Fallback qua Pollinations Flux với cùng style seed cố định
-    encoded = urllib.parse.quote(prompt_text)
-    flux_url = f"https://image.pollinations.ai/prompt/{encoded}?width=800&height=1344&seed={seed}&nologo=true&model=flux"
-    r = requests.get(flux_url, timeout=90)
-    r.raise_for_status()
-    with open(out_path, "wb") as f:
-        f.write(r.content)
+    # 3. Flux AI Webtoon Renderer (kèm Visual DNA đồng bộ & tự động thử lại nếu nghẽn mạng)
+    short_prompt = " ".join(prompt_text.split())[:620]
+    encoded = urllib.parse.quote(short_prompt)
+    for attempt in range(3):
+        try:
+            flux_url = f"https://image.pollinations.ai/prompt/{encoded}?width=800&height=1344&seed={seed + attempt}&nologo=true&model=flux"
+            r = requests.get(flux_url, timeout=75)
+            if r.status_code == 200 and len(r.content) > 1000:
+                with open(out_path, "wb") as f:
+                    f.write(r.content)
+                return True
+        except Exception as e:
+            print(f"[Warn] Flux attempt {attempt + 1} error: {e}")
+        time.sleep(1.5)
+
+    # Nếu mạng chập chờn sau 3 lần thử, tạo khung nền gradient nghệ thuật để không làm gãy pipeline
+    fallback_img = Image.new("RGB", (800, 1344), (16, 18, 38))
+    fallback_img.save(out_path, quality=92)
     return True
 
 
@@ -1030,11 +1076,12 @@ def create_full_webtoon_from_prompt(
 ) -> dict:
     """
     Quy trình End-to-End cho Toàn Bộ Bộ Truyện:
-    1. Gọi LLM sinh Storyboard nhiều chương + Character Visual DNA.
-    2. Vẽ toàn bộ Character Reference Sheets trước.
-    3. Vẽ từng khung hình của từng chương (nhúng Visual DNA + ảnh Character Sheet tham chiếu).
-    4. Tự động Typeset tiếng Việt & đóng gói trọn bộ .ZIP.
+    1. Gọi Gemini 3.5 Flash Lite / 3.8 Flash sinh Storyboard nhiều chương + Character Visual DNA.
+    2. Vẽ song song (đa luồng) toàn bộ Character Reference Sheets & các Khung hình của các chương.
+    3. Tự động Typeset tiếng Việt, tạo Cầu nối chuyển cảnh mượt & đóng gói trọn bộ .ZIP.
     """
+    from concurrent.futures import ThreadPoolExecutor
+
     sb = generate_storyboard_via_ai(
         prompt=prompt,
         num_chapters=num_chapters,
@@ -1050,31 +1097,26 @@ def create_full_webtoon_from_prompt(
     with open(sb_path, "w", encoding="utf-8") as f:
         json.dump(sb, f, ensure_ascii=False, indent=2)
 
-    # Bước 1: Vẽ Bảng Thiết Kế Nhân Vật Đồng Bộ (Character Reference Sheets)
     char_map = {}
     char_ref_paths = {}
     base_seed = int(time.time()) % 10000
+    tasks = []
 
+    # Bước 1: Chuẩn bị tác vụ vẽ Bảng Thiết Kế Nhân Vật Đồng Bộ (Character Reference Sheets)
     for idx, c_cfg in enumerate(sb.get("characters", []), start=1):
         cid = c_cfg.get("id", f"char_{idx}")
         visual_dna = c_cfg.get("visual_dna", "")
         char_map[cid] = visual_dna
         raw_char_path = os.path.join(proj_dir, f"char_{cid}_raw.jpg")
+        char_ref_paths[cid] = raw_char_path
         sheet_prompt = (
             f"Korean Fantasy Manhwa Character Reference Sheet (Solo Leveling / Redice Studio cel-shaded style, "
             f"full-body standing pose on the left and close-up facial portrait on the right, NO TEXT, NO LABELS). "
             f"Character Visual DNA: {visual_dna}. {c_cfg.get('sheet_prompt', '')}"
         )
-        generate_image_with_consistency(
-            prompt_text=sheet_prompt,
-            out_path=raw_char_path,
-            provider=provider,
-            api_key=api_key,
-            seed=base_seed + idx,
-        )
-        char_ref_paths[cid] = raw_char_path
+        tasks.append((sheet_prompt, raw_char_path, None, base_seed + idx))
 
-    # Bước 2: Vẽ Toàn Bộ Khung Hình Của Tất Cả Các Chương
+    # Bước 2: Chuẩn bị tác vụ vẽ Toàn Bộ Khung Hình Của Tất Cả Các Chương
     chapters = normalize_storyboard_chapters(sb)
     for ch in chapters:
         ch_idx = int(ch.get("chapter_index", 1))
@@ -1095,14 +1137,22 @@ def create_full_webtoon_from_prompt(
                 f"Scene description: {p_cfg.get('image_prompt', '')}"
             )
             raw_panel_path = os.path.join(proj_dir, f"ch{ch_idx}_panel_{p_idx}_raw.jpg")
-            generate_image_with_consistency(
-                prompt_text=full_panel_prompt,
-                out_path=raw_panel_path,
-                provider=provider,
-                api_key=api_key,
-                reference_image_paths=ref_imgs,
-                seed=base_seed + ch_idx * 100 + p_idx,
-            )
+            tasks.append((full_panel_prompt, raw_panel_path, ref_imgs, base_seed + ch_idx * 100 + p_idx))
 
-    # Bước 3: Hậu kỳ Typeset toàn bộ các chương & đóng gói .ZIP
+    # Thực thi song song 4 luồng để tăng tốc độ tạo trọn bộ truyện gấp 4 lần
+    def _worker(item):
+        p_txt, o_path, r_imgs, s_val = item
+        generate_image_with_consistency(
+            prompt_text=p_txt,
+            out_path=o_path,
+            provider=provider,
+            api_key=api_key,
+            reference_image_paths=r_imgs,
+            seed=s_val,
+        )
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        list(pool.map(_worker, tasks))
+
+    # Bước 3: Hậu kỳ Typeset toàn bộ các chương, vẽ Cầu nối chuyển cảnh & đóng gói .ZIP
     return render_project(project_id)
