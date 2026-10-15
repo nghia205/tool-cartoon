@@ -368,22 +368,21 @@
     <aside class="panel-col">
       <div class="card">
         <div class="card-title">
-          <span>🔑 1. Cấu Hình AI & API Key</span>
-          <span id="apiKeyStatusBadge" style="font-size:11px;color:#4ade80;">✅ Đã nạp Gemini Key (.env)</span>
+          <span>🤖 1. Cấu Hình AI Agent (agy CLI)</span>
+          <span id="apiKeyStatusBadge" style="font-size:11px;color:#4ade80;">✅ Đang dùng Antigravity CLI</span>
         </div>
-        <label>Model AI Đạo Diễn (Đã đồng bộ theo Quota tài khoản của bạn)</label>
+        <label>Engine AI Đạo Diễn & Họa Sĩ (Tích hợp trực tiếp `agy` CLI)</label>
         <select id="providerSelect">
-          <option value="gemini:gemini-3.1-flash-lite" selected>Gemini 3.1 Flash Lite (Nhanh nhất • 15 RPM • 500 lượt/ngày — Khuyên dùng)</option>
-          <option value="gemini:gemini-3.5-flash-lite">Gemini 3.5 Flash Lite (15 RPM • 500 lượt/ngày)</option>
-          <option value="gemini:gemini-3.8-flash">Gemini 3.8 Flash (5 RPM • 20 lượt/ngày)</option>
-          <option value="gemini:gemini-3-flash-preview">Gemini 3 Flash Preview (5 RPM • 20 lượt/ngày)</option>
-          <option value="gemini:gemma-4-31b-it">Gemma 4 31B IT (30 RPM • 14,400 lượt/ngày)</option>
+          <option value="agy:gemini-3.8-flash-medium" selected>🤖 Antigravity Agent (agy CLI + Subagent Vẽ Ảnh Nét Cao — Khuyên dùng)</option>
+          <option value="agy:gemini-4-argon-medium">🤖 Antigravity Agent — Gemini 4 Argon (agy CLI + Vẽ Ảnh Nét Cao)</option>
+          <option value="gemini:gemini-3.1-flash-lite">Gemini 3.1 Flash Lite (Qua API Key + Vẽ Ảnh agy CLI)</option>
+          <option value="gemini:gemini-3.5-flash-lite">Gemini 3.5 Flash Lite (Qua API Key + Vẽ Ảnh agy CLI)</option>
+          <option value="gemini:gemini-3.8-flash">Gemini 3.8 Flash (Qua API Key + Vẽ Ảnh agy CLI)</option>
           <option value="openai">OpenAI API (GPT-4o + DALL-E 3)</option>
-          <option value="free">Chế độ Miễn phí (Pollinations Flux AI)</option>
         </select>
 
-        <label>Nhập API Key mới (Hoặc để trống để dùng Gemini Key đã nạp sẵn)</label>
-        <input type="password" id="apiKeyInput" placeholder="Đã cấu hình sẵn GEMINI_API_KEY trong .env" />
+        <label>API Key dự phòng (Tùy chọn — Mặc định dùng phiên đăng nhập `agy` CLI)</label>
+        <input type="password" id="apiKeyInput" placeholder="Không cần nhập nếu dùng Antigravity Agent (agy CLI)" />
       </div>
 
       <div class="card">
@@ -473,7 +472,7 @@
         const cfg = await res.json();
         const badge = document.getElementById('apiKeyStatusBadge');
         if (cfg.has_gemini_key) {
-          badge.innerText = '✅ Đã nạp Gemini Key (.env)';
+          badge.innerText = '✅ Đã kích hoạt: Antigravity Agent (agy CLI)';
           badge.style.color = '#4ade80';
         }
       } catch (e) {}
@@ -500,9 +499,10 @@
       if (selectId) {
         await selectProject(selectId);
       } else if (data.projects.length > 0) {
+        const tg = data.projects.find(p => p.project_id === 'thanh_giong');
         const tc = data.projects.find(p => p.project_id === 'tam_cam');
         const sttt = data.projects.find(p => p.project_id === 'son_tinh_thuy_tinh');
-        const target = tc || sttt || data.projects[0];
+        const target = tg || tc || sttt || data.projects[0];
         await selectProject(target.project_id);
       }
     }

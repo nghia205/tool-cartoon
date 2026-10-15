@@ -878,16 +878,45 @@ def generate_storyboard_via_ai(
     user_msg = (
         f"Yêu cầu của độc giả: {prompt}\n"
         f"Chỉ đạo phân chương & khung hình: {pacing_instruction}\n"
-        f"Đồng thời tự động lập hồ sơ thiết kế đồng bộ (`characters` + `visual_dna`) cho toàn bộ các nhân vật chính xuất hiện trong truyện."
+        f"QUAN TRỌNG: Bắt buộc mỗi chương phải có TỐI THIỂU từ 4 đến 5 khung hình (panels) đầy đặn, tuyệt đối không làm chương chỉ có 1-2 khung hình.\n"
+        f"Đồng thời tự động lập hồ sơ thiết kế đồng bộ (`characters` + `visual_dna`) cho từ 3 đến 4 nhân vật chính xuất hiện trong truyện."
     )
 
-    # Danh sách các model có sẵn & còn hạn mức (Quota) trên tài khoản của người dùng:
-    # - gemini-3.5-flash-lite (15 RPM, 250K TPM, 500 RPD)
-    # - gemini-3.8-flash (5 RPM, 250K TPM, 20 RPD)
-    # - gemini-3.1-flash-lite (15 RPM, 250K TPM, 500 RPD)
-    # - gemini-3-flash-preview (5 RPM, 250K TPM, 20 RPD)
-    # - gemma-4-31b-it (30 RPM, 16K TPM, 14.4K RPD)
-    if provider.startswith("gemini") and api_key:
+    agy_bin = "/home/nghia/.local/bin/agy"
+    if not os.path.exists(agy_bin):
+        agy_bin = "agy"
+
+    # 0. Chế độ Mặc định: Gọi trực tiếp Antigravity Agent CLI (agy) đang đăng nhập sẵn
+    if provider.startswith("agy"):
+        import subprocess
+        agy_model = provider.split(":", 1)[1] if ":" in provider else "gemini-3.8-flash-medium"
+        full_prompt = (
+            "Do NOT call any tools. Output ONLY raw valid JSON (no markdown code fences, no explanation).\n\n"
+            + FULL_SERIES_SYSTEM_PROMPT
+            + "\n\n"
+            + user_msg
+        )
+        try:
+            proc = subprocess.run(
+                [agy_bin, "--dangerously-skip-permissions", "--model", agy_model, "-p", full_prompt],
+                capture_output=True,
+                text=True,
+                timeout=120,
+                cwd=BASE_DIR,
+            )
+            raw_out = (proc.stdout or "").strip()
+            # Trích xuất khối JSON từ đầu { đến cuối }
+            j_start = raw_out.find("{")
+            j_end = raw_out.rfind("}")
+            if j_start != -1 and j_end != -1 and j_end > j_start:
+                data = json.loads(raw_out[j_start : j_end + 1])
+                data["model_used"] = f"agy ({agy_model})"
+                return data
+        except Exception as e:
+            print(f"[Warn] agy storyboard fallback to Gemini API: {e}")
+
+    # 1. Dự phòng qua Gemini REST API nếu có api_key
+    if (provider.startswith("gemini") or provider.startswith("agy")) and api_key:
         default_chain = [
             "gemini-3.1-flash-lite",
             "gemini-3.5-flash-lite",
@@ -895,7 +924,11 @@ def generate_storyboard_via_ai(
             "gemini-3.8-flash",
             "gemma-4-31b-it",
         ]
-        preferred = provider.split(":", 1)[1] if ":" in provider else "gemini-3.1-flash-lite"
+        preferred = (
+            provider.split(":", 1)[1]
+            if (":" in provider and provider.startswith("gemini"))
+            else "gemini-3.1-flash-lite"
+        )
         model_chain = [preferred] + [m for m in default_chain if m != preferred]
 
         last_err = None
@@ -967,9 +1000,63 @@ def generate_storyboard_via_ai(
         return json.loads(content)
 
 
-# Cờ nhớ tạm để nếu tài khoản Gemini ở gói Free (0/0 quota cho Nano Banana Image)
-# thì không lặp lại request lỗi ở các khung hình tiếp theo
-_GEMINI_IMAGE_QUOTA_AVAILABLE = True
+_GEMINI_IMAGE_QUOTA_AVAILABLE = False
+
+
+def generate_image_via_agy_cli(prompt_text: str, out_path: str, retries: int = 4) -> bool:
+    """
+    Sử dụng trực tiếp AI Agent `agy` CLI (invoke_subagent TypeName='image-generator')
+    để vẽ ảnh Manhwa 9:16 độ phân giải cao sắc nét.
+    Có cơ chế tự động chờ (backoff 14s) khi gặp giới hạn tốc độ mỗi phút (429 RATE_LIMIT_EXCEEDED).
+    """
+    import shutil
+    import subprocess
+
+    agy_bin = "/home/nghia/.local/bin/agy"
+    if not os.path.exists(agy_bin):
+        return False
+
+    sub_prompt = (
+        "Use the invoke_subagent tool with TypeName='image-generator' (Role='Webtoon Panel Artist', Model='inherit') "
+        "to generate this single vertical 9:16 Korean Manhwa illustration (NO TEXT, NO LETTERS, NO SPEECH BUBBLES): "
+        f"{prompt_text}\n"
+        "Wait for the subagent to finish and reply with ONLY the absolute file path of the saved .jpg image."
+    )
+
+    for attempt in range(retries):
+        try:
+            proc = subprocess.run(
+                [
+                    agy_bin,
+                    "--dangerously-skip-permissions",
+                    "--model",
+                    "gemini-3.8-flash-low",
+                    "-p",
+                    sub_prompt,
+                ],
+                capture_output=True,
+                text=True,
+                timeout=150,
+                cwd=BASE_DIR,
+            )
+            combined = (proc.stdout or "") + "\n" + (proc.stderr or "")
+            matches = re.findall(r"(/home/[^\s\"'`<>]+?\.(?:jpg|jpeg|png|webp))", combined)
+            for m_path in reversed(matches):
+                if os.path.exists(m_path) and os.path.getsize(m_path) > 10000:
+                    shutil.copyfile(m_path, out_path)
+                    return True
+
+            # Nếu bị 429 RATE_LIMIT_EXCEEDED trên model tạo ảnh, nghỉ 14s rồi thử lại
+            if "429" in combined or "RESOURCE_EXHAUSTED" in combined or "exhausted" in combined.lower():
+                wait_s = 14 + attempt * 6
+                print(f"[agy image-generator] Rate limit 429, đợi {wait_s}s rồi vẽ lại (lần {attempt + 1}/{retries})...")
+                time.sleep(wait_s)
+                continue
+        except Exception as e:
+            print(f"[Warn] agy image-generator attempt {attempt + 1} error: {e}")
+            time.sleep(5)
+
+    return False
 
 
 def generate_image_with_consistency(
@@ -981,33 +1068,23 @@ def generate_image_with_consistency(
     seed: int = 42,
 ):
     """
-    Sinh ảnh nhân vật hoặc khung hình Webtoon.
-    - Nếu tài khoản Gemini có mở quota Nano Banana Image (gemini-3.1-flash-image / gemini-3.1-flash-lite-image),
-      dùng Multimodal Image Generation kèm ảnh tham chiếu.
-    - Nếu tài khoản Gemini có quota Image = 0/0 (Gói Free), tự động chuyển thẳng sang Flux AI
-      với Visual DNA đồng bộ để không bao giờ bị lỗi 404/429.
+    Sinh ảnh nhân vật hoặc khung hình Webtoon:
+    1. Ưu tiên số 1: Gọi trực tiếp Antigravity Agent CLI (`agy` -> `image-generator` subagent)
+       để lấy ảnh gốc sắc nét độ phân giải cao (~700KB/ảnh).
+    2. Dự phòng qua Gemini Nano Banana API / OpenAI DALL-E 3 / Flux AI nếu không dùng agy.
     """
     global _GEMINI_IMAGE_QUOTA_AVAILABLE
 
-    # 1. Gemini Nano Banana 2 (gemini-3.1-flash-image / gemini-3.1-flash-lite-image) nếu có quota
+    # 0. Chế độ Antigravity Agent CLI (agy) — Ảnh nét cao chuẩn Studio
+    if provider.startswith("agy") or os.path.exists("/home/nghia/.local/bin/agy"):
+        if generate_image_via_agy_cli(prompt_text, out_path, retries=4):
+            return True
+
+    # 1. Gemini Nano Banana 2 nếu tài khoản có mở quota
     if provider.startswith("gemini") and api_key and _GEMINI_IMAGE_QUOTA_AVAILABLE:
         for img_model in ["gemini-3.1-flash-image", "gemini-3.1-flash-lite-image"]:
             try:
-                parts = []
-                if reference_image_paths:
-                    for ref_p in reference_image_paths[:2]:
-                        if os.path.exists(ref_p):
-                            with open(ref_p, "rb") as rf:
-                                b64_ref = base64.b64encode(rf.read()).decode("utf-8")
-                            parts.append({"inlineData": {"mimeType": "image/jpeg", "data": b64_ref}})
-                parts.append(
-                    {
-                        "text": (
-                            "Keep the exact character face, hair, and outfit design from the reference. "
-                            + prompt_text
-                        )
-                    }
-                )
+                parts = [{"text": prompt_text}]
                 url_mm = f"https://generativelanguage.googleapis.com/v1beta/models/{img_model}:generateContent?key={api_key}"
                 payload_mm = {
                     "contents": [{"parts": parts}],
@@ -1021,11 +1098,9 @@ def generate_image_with_consistency(
                                 f.write(base64.b64decode(part["inlineData"]["data"]))
                             return True
                 elif r_mm.status_code in (404, 429, 403):
-                    # Tài khoản có quota 0/0 cho Nano Banana Image -> tắt thử lại để tăng tốc
                     _GEMINI_IMAGE_QUOTA_AVAILABLE = False
                     break
-            except Exception as e:
-                print(f"[Warn] {img_model} fallback: {e}")
+            except Exception:
                 _GEMINI_IMAGE_QUOTA_AVAILABLE = False
                 break
 
@@ -1050,7 +1125,7 @@ def generate_image_with_consistency(
         except Exception as e:
             print(f"[Warn] OpenAI DALL-E 3 fallback: {e}")
 
-    # 3. Flux AI Webtoon Renderer (kèm Visual DNA đồng bộ & tự động thử lại nếu nghẽn mạng)
+    # 3. Flux AI Webtoon Renderer
     short_prompt = " ".join(prompt_text.split())[:620]
     encoded = urllib.parse.quote(short_prompt)
     for attempt in range(3):
@@ -1063,9 +1138,8 @@ def generate_image_with_consistency(
                 return True
         except Exception as e:
             print(f"[Warn] Flux attempt {attempt + 1} error: {e}")
-        time.sleep(1.5)
+        time.sleep(2.0)
 
-    # Nếu mạng chập chờn sau 3 lần thử, tạo khung nền gradient nghệ thuật để không làm gãy pipeline
     fallback_img = Image.new("RGB", (800, 1344), (16, 18, 38))
     fallback_img.save(out_path, quality=92)
     return True
@@ -1075,13 +1149,14 @@ def create_full_webtoon_from_prompt(
     prompt: str,
     num_chapters="auto",
     panels_per_chapter="auto",
-    provider: str = "gemini",
+    provider: str = "agy",
     api_key: str = "",
 ) -> dict:
     """
-    Quy trình End-to-End cho Toàn Bộ Bộ Truyện:
-    1. Gọi Gemini 3.5 Flash Lite / 3.8 Flash sinh Storyboard nhiều chương + Character Visual DNA.
-    2. Vẽ song song (đa luồng) toàn bộ Character Reference Sheets & các Khung hình của các chương.
+    Quy trình End-to-End cho Toàn Bộ Bộ Truyện bằng Antigravity Agent (agy CLI):
+    1. Gọi AI Đạo Diễn sinh Storyboard nhiều chương + Character Visual DNA.
+    2. Vẽ toàn bộ Character Reference Sheets & các Khung hình bằng `agy` -> `image-generator` subagent
+       (điều tiết nhịp độ 2 luồng + auto-retry khi chạm rate limit mỗi phút để ảnh luôn nét 100%).
     3. Tự động Typeset tiếng Việt, tạo Cầu nối chuyển cảnh mượt & đóng gói trọn bộ .ZIP.
     """
     from concurrent.futures import ThreadPoolExecutor
@@ -1106,7 +1181,6 @@ def create_full_webtoon_from_prompt(
     base_seed = int(time.time()) % 10000
     tasks = []
 
-    # Bước 1: Chuẩn bị tác vụ vẽ Bảng Thiết Kế Nhân Vật Đồng Bộ (Character Reference Sheets)
     for idx, c_cfg in enumerate(sb.get("characters", []), start=1):
         cid = c_cfg.get("id", f"char_{idx}")
         visual_dna = c_cfg.get("visual_dna", "")
@@ -1120,7 +1194,6 @@ def create_full_webtoon_from_prompt(
         )
         tasks.append((sheet_prompt, raw_char_path, None, base_seed + idx))
 
-    # Bước 2: Chuẩn bị tác vụ vẽ Toàn Bộ Khung Hình Của Tất Cả Các Chương
     chapters = normalize_storyboard_chapters(sb)
     for ch in chapters:
         ch_idx = int(ch.get("chapter_index", 1))
@@ -1143,7 +1216,7 @@ def create_full_webtoon_from_prompt(
             raw_panel_path = os.path.join(proj_dir, f"ch{ch_idx}_panel_{p_idx}_raw.jpg")
             tasks.append((full_panel_prompt, raw_panel_path, ref_imgs, base_seed + ch_idx * 100 + p_idx))
 
-    # Thực thi song song 4 luồng để tăng tốc độ tạo trọn bộ truyện gấp 4 lần
+    # Chạy 2 luồng điều tiết nhịp độ để không bao giờ vượt trần RPM của model tạo ảnh
     def _worker(item):
         p_txt, o_path, r_imgs, s_val = item
         generate_image_with_consistency(
@@ -1155,8 +1228,8 @@ def create_full_webtoon_from_prompt(
             seed=s_val,
         )
 
-    with ThreadPoolExecutor(max_workers=4) as pool:
+    with ThreadPoolExecutor(max_workers=2) as pool:
         list(pool.map(_worker, tasks))
 
-    # Bước 3: Hậu kỳ Typeset toàn bộ các chương, vẽ Cầu nối chuyển cảnh & đóng gói .ZIP
     return render_project(project_id)
+

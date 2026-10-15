@@ -601,5 +601,580 @@ def seed_tam_cam_full_series():
     print("Seeded FULL SERIES tam_cam:", res)
 
 
+def seed_thanh_giong_full_series():
+    proj_id = "thanh_giong"
+    proj_dir = os.path.join(PROJECTS_DIR, proj_id)
+    os.makedirs(proj_dir, exist_ok=True)
+
+    # 1. Copy 4 ảnh gốc Hồ Sơ Nhân Vật (Character Reference Sheets)
+    char_files = {
+        "thanh_giong": "thanh_giong_manhwa_sheet_1792049335856.jpg",
+        "giong_be": "giong_child_reference_sheet_1792049498098.jpg",
+        "me_giong": "me_giong_character_sheet_1792049307824.jpg",
+        "thach_linh": "thach_linh_tuong_quan_ref_sheet_png_1792049300131.jpg",
+    }
+    for cid, fname in char_files.items():
+        src = os.path.join(ARTIFACT_DIR, fname)
+        dst = os.path.join(proj_dir, f"char_{cid}_raw.jpg")
+        if os.path.exists(src):
+            shutil.copyfile(src, dst)
+
+    # 2. Copy 12 ảnh gốc của 3 Chương (4 khung / chương)
+    ch_panel_files = {
+        1: [
+            "chapter1_panel1_an_invasion_messenger_1792049299769.jpg",
+            "giong_chapter1_panel2_1792049493682.jpg",
+            "giong_chapter1_panel3_transformation_1792049301054.jpg",
+            "chapter1_panel4_iron_horse_forge_1792049300037.jpg",
+        ],
+        2: [
+            "thanh_giong_iron_horse_panel_1792049326389.jpg",
+            "thanh_giong_ch2_panel2_1792049493243.jpg",
+            "thanh_giong_ch2_panel3_clash_1792049328340.jpg",
+            "thanh_giong_ch2_panel4_png_1792049328657.jpg",
+        ],
+        3: [
+            "thanh_giong_ch3_panel1_victory_1792049332803.jpg",
+            "thanh_giong_soc_son_armor_1792049330613.jpg",
+            "thanh_giong_ascension_soc_son_1792049357782.jpg",
+            "ch3_panel4_phu_dong_thien_vuong_shrine_1792049326838.jpg",
+        ],
+    }
+    for ch_idx, p_list in ch_panel_files.items():
+        for p_idx, fname in enumerate(p_list, start=1):
+            src = os.path.join(ARTIFACT_DIR, fname)
+            dst = os.path.join(proj_dir, f"ch{ch_idx}_panel_{p_idx}_raw.jpg")
+            if os.path.exists(src):
+                shutil.copyfile(src, dst)
+
+    storyboard = {
+        "title": "THÁNH GIÓNG: PHÙ ĐỔNG THIÊN VƯƠNG",
+        "subtitle": "TRỌN BỘ HUYỀN SỬ ĐẠI VIỆT (3 CHƯƠNG HOÀN CHỈNH)",
+        "credits": "Nguyên tác: Truyền thuyết Dân gian Việt Nam (Public Domain) • Sản xuất: Antigravity Agent (agy CLI)",
+        "ai_pacing_note": "Đạo diễn AI (agy CLI) chia bộ truyện thành 3 Chương × 4 Khung hình: Chương 1 (Tiếng nói đầu đời & Thức tỉnh thần lực), Chương 2 (Ngựa sắt phun lửa & Đại chiến Tre Đằng Ngà), Chương 3 (Hóa Thánh về trời trên đỉnh Sóc Sơn).",
+        "characters": [
+            {
+                "id": "thanh_giong",
+                "name": "Thánh Gióng (Phù Đổng Thiên Vương)",
+                "role": "Nam chính • Thiên Tướng Hộ Quốc Lạc Việt (Tứ Bất Tử)",
+                "visual_dna": "20-year-old colossal godlike ancient Vietnamese heavenly warrior, sharp heroic jawline, piercing glowing golden eyes, flowing raven-black hair beneath a golden-bronze Lac Viet war crown, wearing ornate black-and-gold Dong Son dragon-scale battle armor with glowing molten-gold seams, holding a glowing golden-iron war rod (Roi Sắt).",
+            },
+            {
+                "id": "giong_be",
+                "name": "Cậu Bé Gióng (Làng Phù Đổng)",
+                "role": "Hình thái Ấu Thơ • Thần Đồng Làng Gióng",
+                "visual_dna": "Cute yet mysterious 3-year-old ancient Vietnamese divine child, big luminous golden-amber eyes filled with ancient celestial wisdom, black hair tuft, wearing simple rustic brown-and-cream Vietnamese village linen clothes, surrounded by a subtle golden lotus halo.",
+            },
+            {
+                "id": "me_giong",
+                "name": "Mẹ Gióng",
+                "role": "Người Mẹ Hiền Làng Phù Đổng",
+                "visual_dna": "Kind, gentle 40-year-old ancient Vietnamese village mother, warm loving eyes, black hair wrapped in a traditional Vietnamese headscarf (khăn mỏ quạ), wearing humble brown-and-beige traditional Áo Tứ Thân.",
+            },
+            {
+                "id": "thach_linh",
+                "name": "Thạch Linh Tướng Quân",
+                "role": "Đại Phản Diện • Chúa Tể Đại Quân Giặc Ân",
+                "visual_dna": "Towering, brutal warlord of the Ân Invaders with a scarred menacing face, glowing blood-red eyes, black horned iron-skull armor with a dark crimson fur cloak, wielding a massive serrated black iron halberd.",
+            },
+        ],
+        "chapters": [
+            {
+                "chapter_index": 1,
+                "chapter_title": "CHƯƠNG 1: TIẾNG NÓI ĐẦU ĐỜI & SỰ THỨC TỈNH CỦA THIÊN TƯỚNG",
+                "footer_title": "— HẾT CHƯƠNG 1: ĐÓN ĐỌC CHƯƠNG 2 - CHIẾN MÃ PHUN LỬA —",
+                "panels": [
+                    {
+                        "panel_index": 1,
+                        "scene_title": "Vó Ngựa Giặc Ân & Trống Lệnh Cầu Hiền",
+                        "characters_present": ["thach_linh"],
+                        "image_prompt": "Terrifying Ân invader army burning border villages above while a royal Vietnamese messenger rides a white horse beating a bronze drum below.",
+                        "narrations": [
+                            {
+                                "text": "[ĐỜI HÙNG VƯƠNG THỨ SÁU]\nGiặc Ân hung bạo tràn qua biên ải như bão lửa.\nVua Hùng sai sứ giả đi khắp thiên hạ cầu người tài cứu nước!",
+                                "x": 400,
+                                "y": 95,
+                                "w": 700,
+                                "h": 98,
+                                "border_color": [239, 68, 68, 240],
+                                "text_color": [254, 226, 226, 255],
+                                "font_size": 20,
+                            }
+                        ],
+                        "sfx": [
+                            {
+                                "text": "TÙNG! TÙNG!!",
+                                "x": 540,
+                                "y": 640,
+                                "font_size": 48,
+                                "color": [253, 224, 71, 255],
+                                "glow_color": [220, 38, 38, 255],
+                                "angle": -9,
+                            }
+                        ],
+                        "bubbles": [
+                            {
+                                "text": "Quân giặc Ân thế mạnh như chẻ tre!\nAi là bậc kỳ tài xin ra giúp nước cứu dân!!",
+                                "x": 400,
+                                "y": -95,
+                                "rx": 285,
+                                "ry": 72,
+                                "tail": [410, -340],
+                                "dark_mode": False,
+                                "font_size": 20,
+                            }
+                        ],
+                        "gutter_text": "Tại làng Phù Đổng, có cậu bé lên ba vẫn chưa biết nói cười, đặt đâu nằm đấy... Nhưng khi vừa nghe tiếng trống sứ giả, kim quang trên trời bỗng giáng xuống!",
+                    },
+                    {
+                        "panel_index": 2,
+                        "scene_title": "Tiếng Nói Đầu Đời Của Thần Đồng",
+                        "characters_present": ["giong_be", "me_giong"],
+                        "image_prompt": "3-year-old Gióng standing radiantly in a pillar of golden celestial light pointing toward the kneeling Royal Messenger.",
+                        "narrations": [
+                            {
+                                "text": "Đứa trẻ ba năm chưa từng cất tiếng, lời đầu tiên nói ra\nlại là lời thề gánh vác vận mệnh cả giang sơn!",
+                                "x": 400,
+                                "y": 90,
+                                "w": 690,
+                                "h": 92,
+                                "border_color": [250, 204, 21, 240],
+                                "text_color": [254, 249, 195, 255],
+                                "font_size": 20,
+                            }
+                        ],
+                        "sfx": [],
+                        "bubbles": [
+                            {
+                                "text": "Ông về tâu với Đức Vua đúc cho ta một con ngựa sắt,\nmột cái roi sắt và một tấm áo giáp sắt để ta phá giặc này!",
+                                "x": 400,
+                                "y": -95,
+                                "rx": 310,
+                                "ry": 76,
+                                "tail": [400, -450],
+                                "dark_mode": False,
+                                "font_size": 20,
+                            }
+                        ],
+                        "gutter_text": "Từ sau hôm gặp sứ giả, Gióng lớn nhanh như thổi! Cơm ăn mấy cũng không no, áo vừa mặc xong đã căng đứt chỉ, cả làng Phù Đổng nô nức góp gạo nuôi trang dũng sĩ...",
+                    },
+                    {
+                        "panel_index": 3,
+                        "scene_title": "Làng Phù Đổng Góp Gạo & Gióng Vươn Vai Hóa Khổng Lồ",
+                        "characters_present": ["thanh_giong", "me_giong"],
+                        "image_prompt": "Villagers bringing baskets of rice as Gióng transforms in a golden-crimson vortex into a colossal heavenly warrior.",
+                        "narrations": [
+                            {
+                                "text": "Tình dân đất Việt hội tụ thành thần lực vô biên!\nCậu bé vươn vai một cái, hóa thành Thiên Tướng uy dũng cao hơn trượng!",
+                                "x": 400,
+                                "y": 95,
+                                "w": 710,
+                                "h": 95,
+                                "border_color": [250, 204, 21, 240],
+                                "text_color": [254, 249, 195, 255],
+                                "font_size": 20,
+                            }
+                        ],
+                        "sfx": [
+                            {
+                                "text": "BÙNG NỔ!!",
+                                "x": 520,
+                                "y": 540,
+                                "font_size": 52,
+                                "color": [253, 224, 71, 255],
+                                "glow_color": [234, 88, 12, 255],
+                                "angle": -8,
+                            }
+                        ],
+                        "bubbles": [
+                            {
+                                "text": "Ơn nghĩa mẹ cha và bà con làng Phù Đổng,\nta nguyện lấy máu giặc Ân để báo đền!",
+                                "x": 400,
+                                "y": -95,
+                                "rx": 280,
+                                "ry": 72,
+                                "tail": [400, -450],
+                                "dark_mode": False,
+                                "font_size": 20,
+                            }
+                        ],
+                        "gutter_text": "Cùng lúc đó tại kinh thành Phong Châu, hàng ngàn thợ rèn giỏi nhất ngày đêm đỏ lửa đúc nên thần binh truyền thuyết...",
+                    },
+                    {
+                        "panel_index": 4,
+                        "scene_title": "Đại Lò Rèn Đúc Chiến Mã Sắt & Giáp Kim Long",
+                        "characters_present": ["thanh_giong"],
+                        "image_prompt": "Colossal Iron Warhorse with fiery eyes, black-and-gold Dong Son dragon battle armor, and glowing iron war rod in royal forge.",
+                        "narrations": [
+                            {
+                                "text": "Ngựa Sắt ngậm hỏa châu, Giáp Sắt khắc giao long, Roi Sắt nặng ngàn cân —\nThần binh xuất thế chờ đón chủ nhân!",
+                                "x": 400,
+                                "y": 95,
+                                "w": 700,
+                                "h": 95,
+                                "border_color": [249, 115, 22, 240],
+                                "text_color": [255, 237, 213, 255],
+                                "font_size": 20,
+                            }
+                        ],
+                        "sfx": [
+                            {
+                                "text": "RỰC LỬA!!",
+                                "x": 530,
+                                "y": 620,
+                                "font_size": 48,
+                                "color": [253, 186, 116, 255],
+                                "glow_color": [220, 38, 38, 255],
+                                "angle": -9,
+                            }
+                        ],
+                        "bubbles": [
+                            {
+                                "text": "Chiến mã sắt đã rèn xong!\nMau rước tráng sĩ làng Phù Đổng xuất chinh!",
+                                "x": 400,
+                                "y": -95,
+                                "rx": 275,
+                                "ry": 72,
+                                "tail": [350, -320],
+                                "dark_mode": False,
+                                "font_size": 20,
+                            }
+                        ],
+                        "gutter_text": "",
+                    },
+                ],
+            },
+            {
+                "chapter_index": 2,
+                "chapter_title": "CHƯƠNG 2: CHIẾN MÃ PHUN LỬA & ĐẠI CHIẾN TRE ĐẰNG NGÀ",
+                "footer_title": "— HẾT CHƯƠNG 2: ĐÓN ĐỌC CHƯƠNG 3 - HÓA THÁNH VỀ TRỜI —",
+                "panels": [
+                    {
+                        "panel_index": 1,
+                        "scene_title": "Ngựa Sắt Hí Vang Phun Đại Hỏa Diễm",
+                        "characters_present": ["thanh_giong"],
+                        "image_prompt": "Thánh Gióng in black-and-gold Dong Son armor mounting the rearing Iron Warhorse as it breathes golden-crimson dragon fire.",
+                        "narrations": [
+                            {
+                                "text": "Khoảnh khắc Thánh Gióng vỗ nhẹ lên lưng Ngựa Sắt,\nchiến mã bỗng hóa sinh linh, hí vang một tiếng phun lửa rực trời!",
+                                "x": 400,
+                                "y": 95,
+                                "w": 700,
+                                "h": 95,
+                                "border_color": [250, 204, 21, 240],
+                                "text_color": [254, 249, 195, 255],
+                                "font_size": 20,
+                            }
+                        ],
+                        "sfx": [
+                            {
+                                "text": "HÍÍÍ—ẦMMM!!",
+                                "x": 520,
+                                "y": 540,
+                                "font_size": 52,
+                                "color": [253, 224, 71, 255],
+                                "glow_color": [220, 38, 38, 255],
+                                "angle": -10,
+                            }
+                        ],
+                        "bubbles": [
+                            {
+                                "text": "Tiến lên, Chiến Mã Sắt!\nHôm nay ta và ngươi quét sạch bóng quân thù khỏi bờ cõi!",
+                                "x": 400,
+                                "y": -95,
+                                "rx": 295,
+                                "ry": 72,
+                                "tail": [400, -450],
+                                "dark_mode": False,
+                                "font_size": 20,
+                            }
+                        ],
+                        "gutter_text": "Ngựa sắt lao đi nhanh như lốc cuốn! Đón đầu đại quân giặc Ân dưới chân núi Trâu, Gióng vung Roi Sắt giáng đòn sấm sét...",
+                    },
+                    {
+                        "panel_index": 2,
+                        "scene_title": "Một Roi Quét Sạch Vạn Quân Thù",
+                        "characters_present": ["thanh_giong", "thach_linh"],
+                        "image_prompt": "Thánh Gióng riding his fire-breathing Iron Warhorse sweeping his glowing molten-iron rod through the Ân invader army.",
+                        "narrations": [
+                            {
+                                "text": "Ngựa phun lửa thiêu rụi chiến xa, Roi Sắt quét tới đâu\nđội hình tiên phong của giặc Ân tan tác tới đó!",
+                                "x": 400,
+                                "y": 90,
+                                "w": 680,
+                                "h": 92,
+                                "border_color": [249, 115, 22, 240],
+                                "text_color": [255, 237, 213, 255],
+                                "font_size": 20,
+                            }
+                        ],
+                        "sfx": [
+                            {
+                                "text": "ĐOÀNG!!",
+                                "x": 540,
+                                "y": 600,
+                                "font_size": 54,
+                                "color": [253, 224, 71, 255],
+                                "glow_color": [220, 38, 38, 255],
+                                "angle": -8,
+                            }
+                        ],
+                        "bubbles": [
+                            {
+                                "text": "Kẻ nào dám phạm bờ cõi Văn Lang,\nhãy nhận lấy cơn thịnh nộ này!!",
+                                "x": 400,
+                                "y": -95,
+                                "rx": 275,
+                                "ry": 72,
+                                "tail": [410, -420],
+                                "dark_mode": False,
+                                "font_size": 20,
+                            }
+                        ],
+                        "gutter_text": "Giữa biển lửa loạn quân, Thạch Linh Tướng Quân — chúa tể giặc Ân vung đại đao hắc thiết lao ra tử chiến trực diện với Thánh Gióng!",
+                    },
+                    {
+                        "panel_index": 3,
+                        "scene_title": "Tử Chiến Chủ Tướng Giặc Ân & Roi Sắt Gãy Đôi",
+                        "characters_present": ["thanh_giong", "thach_linh"],
+                        "image_prompt": "Extreme close-up clash between Thánh Gióng and the horned Ân General shattering both the iron rod and black halberd.",
+                        "narrations": [
+                            {
+                                "text": "Đòn va chạm kinh thiên động địa giữa hai luồng thần lực\nkhiến cả đại đao giặc Ân lẫn cây Roi Sắt đều nổ tung thành vạn mảnh!",
+                                "x": 400,
+                                "y": 95,
+                                "w": 710,
+                                "h": 95,
+                                "border_color": [239, 68, 68, 240],
+                                "text_color": [254, 226, 226, 255],
+                                "font_size": 20,
+                            }
+                        ],
+                        "sfx": [
+                            {
+                                "text": "CHOANG! RẮC!!",
+                                "x": 480,
+                                "y": 540,
+                                "font_size": 50,
+                                "color": [254, 202, 202, 255],
+                                "glow_color": [220, 38, 38, 255],
+                                "angle": -9,
+                            }
+                        ],
+                        "bubbles": [
+                            {
+                                "text": "Roi sắt của ngươi gãy rồi!\nXem ngươi lấy gì cản đại quân của ta?!",
+                                "x": 400,
+                                "y": -95,
+                                "rx": 270,
+                                "ry": 72,
+                                "tail": [520, -450],
+                                "dark_mode": True,
+                                "font_size": 20,
+                            }
+                        ],
+                        "gutter_text": "Không chút nao núng, Thánh Gióng xoay người vươn đôi tay thần lực nhổ phăng cả rặng tre ngà ngàn năm bên sườn núi!",
+                    },
+                    {
+                        "panel_index": 4,
+                        "scene_title": "Nhổ Cụm Tre Đằng Ngà Quật Tan Tướng Giặc",
+                        "characters_present": ["thanh_giong", "thach_linh"],
+                        "image_prompt": "Colossal Thánh Gióng uprooting entire clusters of glowing golden bamboo trees to crush the terrified Ân General and his army.",
+                        "narrations": [
+                            {
+                                "text": "Cỏ cây non nước Đại Việt đều hóa thành thần binh!\nCụm tre ngà thấm hỏa khí của Ngựa Sắt bừng sáng sắc vàng kim bất diệt!",
+                                "x": 400,
+                                "y": 95,
+                                "w": 710,
+                                "h": 95,
+                                "border_color": [250, 204, 21, 245],
+                                "text_color": [254, 249, 195, 255],
+                                "font_size": 20,
+                            }
+                        ],
+                        "sfx": [
+                            {
+                                "text": "ẦM ĐOÀNG!!",
+                                "x": 520,
+                                "y": 580,
+                                "font_size": 52,
+                                "color": [253, 224, 71, 255],
+                                "glow_color": [234, 179, 8, 255],
+                                "angle": -10,
+                            }
+                        ],
+                        "bubbles": [
+                            {
+                                "text": "Từng tấc đất, từng nhành tre nơi đây\nđều là vũ khí chôn vùi lũ xâm lăng!!",
+                                "x": 400,
+                                "y": -95,
+                                "rx": 280,
+                                "ry": 72,
+                                "tail": [400, -450],
+                                "dark_mode": False,
+                                "font_size": 20,
+                            }
+                        ],
+                        "gutter_text": "",
+                    },
+                ],
+            },
+            {
+                "chapter_index": 3,
+                "chapter_title": "CHƯƠNG 3: TRE ĐẰNG NGÀ HÓA VÀNG & PHÙ ĐỔNG THIÊN VƯƠNG VỀ TRỜI",
+                "footer_title": "— ĐẠI KẾT CỤC: HẾT TRỌN BỘ THÁNH GIÓNG —",
+                "panels": [
+                    {
+                        "panel_index": 1,
+                        "scene_title": "Bình Minh Khải Hoàn & Rặng Tre Đằng Ngà Vàng Óng",
+                        "characters_present": ["thanh_giong"],
+                        "image_prompt": "Thánh Gióng standing victorious on his Iron Warhorse at golden sunrise surrounded by glowing golden bamboo while invaders flee.",
+                        "narrations": [
+                            {
+                                "text": "Chủ tướng giặc Ân tử trận, tàn quân khiếp đảm vứt giáp xin hàng.\nBờ cõi Văn Lang sạch bóng quân thù dưới ánh bình minh rực rỡ!",
+                                "x": 400,
+                                "y": 95,
+                                "w": 700,
+                                "h": 95,
+                                "border_color": [250, 204, 21, 240],
+                                "text_color": [254, 249, 195, 255],
+                                "font_size": 20,
+                            }
+                        ],
+                        "sfx": [],
+                        "bubbles": [
+                            {
+                                "text": "Sứ mệnh hộ quốc đã hoàn tất...\nNon sông này từ nay trở lại thái bình!",
+                                "x": 400,
+                                "y": -95,
+                                "rx": 270,
+                                "ry": 70,
+                                "tail": [400, -450],
+                                "dark_mode": False,
+                                "font_size": 20,
+                            }
+                        ],
+                        "gutter_text": "Không màng danh lợi hay tước lộc triều đình, người anh hùng một mình một ngựa phi thẳng lên đỉnh núi Sóc Sơn mây phủ...",
+                    },
+                    {
+                        "panel_index": 2,
+                        "scene_title": "Cởi Giáp Sắt Lưu Lại Đỉnh Sóc Sơn",
+                        "characters_present": ["thanh_giong"],
+                        "image_prompt": "Thánh Gióng on misty summit of Mount Sóc Sơn placing his black-and-gold iron battle armor on a stone altar and smiling back at his homeland.",
+                        "narrations": [
+                            {
+                                "text": "Trên đỉnh Sóc Sơn lộng gió, Thánh Gióng cởi bỏ bộ giáp sắt Kim Long\nđể lại nhân gian, ngoái nhìn quê hương và mẹ già lần cuối...",
+                                "x": 400,
+                                "y": 95,
+                                "w": 700,
+                                "h": 95,
+                                "border_color": [103, 232, 249, 235],
+                                "text_color": [224, 242, 254, 255],
+                                "font_size": 20,
+                            }
+                        ],
+                        "sfx": [],
+                        "bubbles": [
+                            {
+                                "text": "Xin tạ từ mẹ hiền và bách tính Văn Lang...\nKhi nào non nước cần, ta sẽ còn hiển linh!",
+                                "x": 400,
+                                "y": -95,
+                                "rx": 285,
+                                "ry": 72,
+                                "tail": [400, -480],
+                                "dark_mode": False,
+                                "font_size": 20,
+                            }
+                        ],
+                        "gutter_text": "Dứt lời, Ngựa Sắt hí vang một tiếng chấn động tầng mây, tung vó lửa bay thẳng vào vòm trời rực sáng!",
+                    },
+                    {
+                        "panel_index": 3,
+                        "scene_title": "Ngựa Sắt Đạp Mây Bay Về Cõi Trời",
+                        "characters_present": ["thanh_giong", "me_giong"],
+                        "image_prompt": "Thánh Gióng riding his glowing Iron Warhorse straight up into parted golden heavenly clouds while King Hùng and villagers bow below.",
+                        "narrations": [
+                            {
+                                "text": "Giữa muôn đạo hào quang sen vàng, cả người lẫn ngựa hóa kim quang\nbay thẳng về trời trước sự thành kính bái vọng của muôn dân!",
+                                "x": 400,
+                                "y": 95,
+                                "w": 710,
+                                "h": 95,
+                                "border_color": [250, 204, 21, 245],
+                                "text_color": [254, 249, 195, 255],
+                                "font_size": 20,
+                            }
+                        ],
+                        "sfx": [
+                            {
+                                "text": "VÚTTT!!",
+                                "x": 540,
+                                "y": 480,
+                                "font_size": 50,
+                                "color": [253, 224, 71, 255],
+                                "glow_color": [245, 158, 11, 255],
+                                "angle": -10,
+                            }
+                        ],
+                        "bubbles": [
+                            {
+                                "text": "Bái tạ Đức Phù Đổng Thiên Vương!!\nThần uy của Ngài mãi mãi trường tồn cùng dân tộc!",
+                                "x": 400,
+                                "y": -95,
+                                "rx": 290,
+                                "ry": 72,
+                                "tail": [400, -280],
+                                "dark_mode": False,
+                                "font_size": 20,
+                            }
+                        ],
+                        "gutter_text": "Từ đó về sau, những rặng tre bị lửa ngựa sắt hun đốt hóa thành Tre Đằng Ngà vàng óng, còn vết chân ngựa hóa thành những hồ nước trong xanh nối tiếp nhau...",
+                    },
+                    {
+                        "panel_index": 4,
+                        "scene_title": "Đại Kết Cục: Huyền Thoại Phù Đổng Thiên Vương Bất Diệt",
+                        "characters_present": ["thanh_giong"],
+                        "image_prompt": "Grand ancient Vietnamese temple Đền Gióng nestled among golden bamboo groves and circular footprint lakes under eternal golden sunlight.",
+                        "narrations": [
+                            {
+                                "text": "Vua Hùng nhớ công ơn, phong Ngài là Phù Đổng Thiên Vương,\nlập đền thờ tại quê hương — một trong Tứ Bất Tử hộ trì non sông Việt Nam!",
+                                "x": 400,
+                                "y": 95,
+                                "w": 720,
+                                "h": 98,
+                                "border_color": [250, 204, 21, 245],
+                                "text_color": [254, 249, 195, 255],
+                                "font_size": 20,
+                            }
+                        ],
+                        "sfx": [],
+                        "bubbles": [
+                            {
+                                "text": "Hào khí Phù Đổng ngàn năm bất diệt,\nđời đời kiếp kiếp che chở con Lạc cháu Hồng!",
+                                "x": 400,
+                                "y": -95,
+                                "rx": 285,
+                                "ry": 72,
+                                "tail": [400, -520],
+                                "dark_mode": False,
+                                "font_size": 20,
+                            }
+                        ],
+                        "gutter_text": "",
+                    },
+                ],
+            },
+        ],
+    }
+
+    with open(os.path.join(proj_dir, "storyboard.json"), "w", encoding="utf-8") as f:
+        json.dump(storyboard, f, ensure_ascii=False, indent=2)
+
+    res = render_project(proj_id)
+    print("Seeded FULL SERIES thanh_giong:", res)
+
+
 if __name__ == "__main__":
     seed_tam_cam_full_series()
+    seed_thanh_giong_full_series()
+
