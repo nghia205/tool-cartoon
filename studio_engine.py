@@ -637,16 +637,17 @@ def render_project(project_id: str) -> dict:
 # 2. AI MULTI-CHAPTER STORYBOARD & CONSISTENT CHARACTER GENERATION PIPELINE
 # ==============================================================================
 
-FULL_SERIES_SYSTEM_PROMPT = """Bạn là Tổng Đạo Diễn Webtoon Hàn Quốc (Manhwa Series Showrunner) chuyên chuyển thể truyện cổ tích, dã sử, thần thoại sang trọn bộ Webtoon hành động thần thoại (như Solo Leveling, Omniscient Reader).
+FULL_SERIES_SYSTEM_PROMPT = """Bạn là Tổng Đạo Diễn Webtoon Hàn Quốc (Manhwa Series Showrunner) chuyên chuyển thể truyện cổ tích, dã sử, thần thoại, tiểu thuyết sang trọn bộ Webtoon hành động/kỳ ảo (như Solo Leveling, Omniscient Reader).
 Nhiệm vụ: Khi người dùng yêu cầu tạo một bộ truyện, hãy thiết kế TRỌN BỘ TRUYỆN ĐẦY ĐỦ TỪ ĐẦU ĐẾN CUỐI gồm:
-1. Hồ sơ các nhân vật chính (`characters`) với `visual_dna` bằng tiếng Anh cực kỳ chi tiết và cố định (kiểu tóc, màu mắt, giáp trụ/trang phục, vũ khí, màu hào quang) để AI vẽ đồng bộ khuôn mặt và trang phục xuyên suốt mọi chương.
-2. Tất cả các chương (`chapters`) bao trọn toàn bộ cốt truyện từ Mở đầu -> Phát triển -> Cao trào -> Đại kết cục.
+1. Hồ sơ các nhân vật chính (`characters`) với `visual_dna` bằng tiếng Anh cực kỳ chi tiết và cố định (kiểu tóc, màu mắt, giáp trụ/trang phục, vũ khí, màu hào quang) để AI vẽ đồng bộ khuôn mặt và trang phục xuyên suốt mọi chương. Tự động xác định số lượng nhân vật cốt lõi cần có trong truyện.
+2. Tất cả các chương (`chapters`) bao trọn toàn bộ cốt truyện từ Mở đầu -> Phát triển -> Biến cố/Cao trào -> Đại kết cục. Nếu người dùng để chế độ Tự động (AI Quyết định), bạn hãy tự phân tích độ dài, nhịp độ kịch tính của cốt truyện để tự quyết định số lượng chương hợp lý nhất VÀ số lượng khung hình (panels) linh hoạt cho từng chương (chương cao trào có thể nhiều khung hình hơn chương mở đầu).
 
 Trả về DUY NHẤT một chuỗi JSON hợp lệ (không bọc trong markdown ```json) theo cấu trúc:
 {
   "title": "TÊN BỘ TRUYỆN (IN HOA)",
   "subtitle": "TRỌN BỘ WEBTOON HOÀN CHỈNH",
   "credits": "Nguyên tác: Public Domain • AI Webtoon Studio",
+  "ai_pacing_note": "Giải thích ngắn gọn vì sao AI chia bộ truyện này thành X chương và tổng cộng Y khung hình theo nhịp độ cốt truyện",
   "characters": [
     {
       "id": "son_tinh",
@@ -706,12 +707,41 @@ Trả về DUY NHẤT một chuỗi JSON hợp lệ (không bọc trong markdown
 
 
 def generate_storyboard_via_ai(
-    prompt: str, num_chapters: int = 3, panels_per_chapter: int = 4, provider: str = "gemini", api_key: str = ""
+    prompt: str,
+    num_chapters="auto",
+    panels_per_chapter="auto",
+    provider: str = "gemini",
+    api_key: str = "",
 ) -> dict:
+    auto_chapters = str(num_chapters).lower() in ("auto", "0", "", "none")
+    auto_panels = str(panels_per_chapter).lower() in ("auto", "0", "", "none")
+
+    if auto_chapters and auto_panels:
+        pacing_instruction = (
+            "Hãy TỰ QUYẾT ĐỊNH số lượng chương (thường từ 3 đến 5 chương tùy độ dài cốt truyện) "
+            "VÀ TỰ QUYẾT ĐỊNH số lượng khung hình (panels) trong mỗi chương (mỗi chương có thể có từ 3 đến 6 khung hình "
+            "khác nhau tùy theo độ kịch tính/cao trào của chương đó) sao cho truyền tải trọn vẹn, đầy đủ nhất toàn bộ cốt truyện từ đầu đến cuối."
+        )
+    elif auto_chapters:
+        pacing_instruction = (
+            f"Hãy TỰ QUYẾT ĐỊNH số lượng chương phù hợp nhất với cốt truyện, "
+            f"mỗi chương gồm khoảng {panels_per_chapter} khung hình."
+        )
+    elif auto_panels:
+        pacing_instruction = (
+            f"Hãy chia bộ truyện thành {num_chapters} chương, và TỰ QUYẾT ĐỊNH số khung hình (panels) "
+            f"linh hoạt cho từng chương (từ 3 đến 6 khung/chương tùy độ cao trào)."
+        )
+    else:
+        pacing_instruction = (
+            f"Hãy thiết kế TRỌN BỘ truyện hoàn chỉnh từ đầu đến kết thúc gồm {num_chapters} chương "
+            f"(mỗi chương có {panels_per_chapter} khung hình)."
+        )
+
     user_msg = (
-        f"Yêu cầu: {prompt}. "
-        f"Hãy thiết kế TRỌN BỘ truyện hoàn chỉnh từ đầu đến kết thúc gồm {num_chapters} chương "
-        f"(mỗi chương có {panels_per_chapter} khung hình) và bảng thiết kế từ 3-4 nhân vật chính đồng bộ."
+        f"Yêu cầu của độc giả: {prompt}\n"
+        f"Chỉ đạo phân chương & khung hình: {pacing_instruction}\n"
+        f"Đồng thời tự động lập hồ sơ thiết kế đồng bộ (`characters` + `visual_dna`) cho toàn bộ các nhân vật chính xuất hiện trong truyện."
     )
 
     if provider == "gemini" and api_key:
@@ -856,8 +886,8 @@ def generate_image_with_consistency(
 
 def create_full_webtoon_from_prompt(
     prompt: str,
-    num_chapters: int = 3,
-    panels_per_chapter: int = 4,
+    num_chapters="auto",
+    panels_per_chapter="auto",
     provider: str = "gemini",
     api_key: str = "",
 ) -> dict:

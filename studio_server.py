@@ -195,8 +195,8 @@ class StudioHandler(SimpleHTTPRequestHandler):
                 prompt = body.get("prompt", "").strip()
                 if not prompt:
                     return self._send_json({"error": "Vui lòng nhập yêu cầu tạo truyện!"}, 400)
-                num_chapters = int(body.get("num_chapters", 3))
-                panels_per_chapter = int(body.get("panels_per_chapter", 4))
+                num_chapters = body.get("num_chapters", "auto")
+                panels_per_chapter = body.get("panels_per_chapter", "auto")
                 provider = body.get("provider", "gemini")
                 api_key = body.get("api_key", "").strip()
 

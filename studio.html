@@ -375,16 +375,20 @@
           <div>
             <label>Số Chương (Full Series)</label>
             <select id="numChaptersSelect">
+              <option value="auto" selected>🤖 AI Tự Quyết Định (Theo cốt truyện)</option>
               <option value="2">2 Chương</option>
-              <option value="3" selected>3 Chương (Đầy đủ)</option>
-              <option value="4">4 Chương (Dài)</option>
+              <option value="3">3 Chương</option>
+              <option value="4">4 Chương</option>
+              <option value="5">5 Chương</option>
             </select>
           </div>
           <div>
             <label>Số Khung / Chương</label>
             <select id="panelsPerChapterSelect">
-              <option value="4" selected>4 Khung / Chương</option>
-              <option value="5">5 Khung / Chương</option>
+              <option value="auto" selected>🤖 AI Tự Quyết Định (Linh hoạt mỗi chương)</option>
+              <option value="4">Cố định 4 Khung / Chương</option>
+              <option value="5">Cố định 5 Khung / Chương</option>
+              <option value="6">Cố định 6 Khung / Chương</option>
             </select>
           </div>
         </div>
@@ -691,15 +695,20 @@
       }
       const provider = document.getElementById('providerSelect').value;
       const apiKey = document.getElementById('apiKeyInput').value.trim();
-      const numChapters = parseInt(document.getElementById('numChaptersSelect').value, 10);
-      const panelsPerChapter = parseInt(document.getElementById('panelsPerChapterSelect').value, 10);
+      const rawChapters = document.getElementById('numChaptersSelect').value;
+      const rawPanels = document.getElementById('panelsPerChapterSelect').value;
+      const numChapters = rawChapters === 'auto' ? 'auto' : parseInt(rawChapters, 10);
+      const panelsPerChapter = rawPanels === 'auto' ? 'auto' : parseInt(rawPanels, 10);
 
       const btn = document.getElementById('generateBtn');
       const toast = document.getElementById('genStatusToast');
       btn.disabled = true;
-      btn.innerText = '⏳ Đang sản xuất trọn bộ truyện & nhân vật...';
+      btn.innerText = '⏳ AI Đạo Diễn đang phân chương & vẽ trọn bộ...';
       toast.style.display = 'block';
-      toast.innerText = `AI đang tạo Hồ sơ Nhân vật đồng bộ + Kịch bản ${numChapters} chương (${numChapters * panelsPerChapter} khung hình) + Đóng bóng thoại tiếng Việt...`;
+      const modeDesc = (numChapters === 'auto' || panelsPerChapter === 'auto')
+        ? 'AI đang tự phân tích độ dài cốt truyện để quyết định số chương & số khung hình linh hoạt cho từng chương'
+        : `Kịch bản ${numChapters} chương (${numChapters * panelsPerChapter} khung hình)`;
+      toast.innerText = `🤖 ${modeDesc} + Tạo Hồ sơ Nhân vật đồng bộ + Đóng bóng thoại tiếng Việt...`;
 
       try {
         const res = await fetch('/api/generate', {
@@ -718,7 +727,10 @@
         if (data.error) {
           toast.innerText = '❌ ' + data.error;
         } else {
-          toast.innerText = `✅ Đã hoàn thành trọn bộ: ${data.project.title} (${data.project.chapter_count} chương, ${data.project.panel_count} khung hình)!`;
+          const note = (data.project.storyboard && data.project.storyboard.ai_pacing_note)
+            ? `\n💡 Ghi chú Đạo diễn AI: ${data.project.storyboard.ai_pacing_note}`
+            : '';
+          toast.innerText = `✅ Đã hoàn thành trọn bộ: ${data.project.title} (${data.project.chapter_count} chương, ${data.project.panel_count} khung hình, ${data.project.character_count} nhân vật)!${note}`;
           await loadProjectList(data.project.project_id);
         }
       } catch (err) {
